@@ -1,0 +1,34 @@
+# Node.js dependencies
+node_modules/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and test output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+
+# Generated files
+dist/
+build/
+tmp/
+.cache/
+
+# Uploaded demo images and local database data
+uploads/
+pgdata/
+postgres-data/
+*.dump
+*.backup
+
+# Editor and operating system files
+/lazyvim-setup/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
