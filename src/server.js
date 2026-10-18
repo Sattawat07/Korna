@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { config } from './config.js';
 import { pool } from './db.js';
+import { categoriesRouter } from './routes/categories.js';
 
 await mkdir(config.uploadDir, { recursive: true });
 
@@ -11,6 +12,7 @@ app.disable('x-powered-by');
 app.use(cors({ origin: config.corsOrigins }));
 app.use(express.json({ limit: '1mb' }));
 app.use('/uploads', express.static(config.uploadDir, { index: false, dotfiles: 'deny' }));
+app.use('/api/categories', categoriesRouter);
 
 app.get('/api/health', (_request, response) => {
   response.json({ status: 'ok' });
