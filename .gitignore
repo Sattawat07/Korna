@@ -32,3 +32,6 @@ postgres-data/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local harness / tooling artifacts
+.harness/
