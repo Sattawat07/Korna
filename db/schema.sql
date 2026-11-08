@@ -6,7 +6,7 @@ CREATE TABLE users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_name VARCHAR(100) NOT NULL,
     user_email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    user_password TEXT NOT NULL,
     user_room_number VARCHAR(20) NOT NULL,
     user_phone_number VARCHAR(20),
     user_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

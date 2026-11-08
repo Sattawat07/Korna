@@ -1,6 +1,6 @@
 # Korna API
 
-รูปแบบ API สำหรับเว็บให้ฟรีและแลกของมือสอง ใช้เอกสารนี้เป็นข้อตกลงเรื่อง URL, request, response และสถานะของข้อมูล
+รูปแบบ API สำหรับเว็บให้ฟรีและแลกของมือสอง ใช้เอกสารนี้เป็นข้อตกลงเรื่อง URL, request, response และสถานะของข้อมูล ระบบบัญชีในเอกสารนี้ใช้สำหรับสาธิตด้วยข้อมูลสมมติเท่านั้น
 
 ## ข้อตกลงร่วม
 
@@ -8,7 +8,9 @@
 - ทุก endpoint เริ่มด้วย `/api` ยกเว้น URL รูปที่เริ่มด้วย `/uploads/`
 - JSON ใช้ `snake_case` และส่ง `Content-Type: application/json` ยกเว้น endpoint ที่ระบุ `multipart/form-data`
 - วันที่เป็น ISO 8601 เช่น `2026-10-18T10:00:00.000Z`; ID เป็นตัวเลข
-- endpoint ที่ต้องล็อกอินส่ง `Authorization: Bearer <token>`; token มีอายุ 7 วัน
+- endpoint ที่ทำในนามผู้ใช้ส่ง header `X-Demo-User-Id: <user.id>` โดยใช้ ID ที่ได้จากการล็อกอิน; frontend เก็บ ID นี้ไว้ใน `sessionStorage`
+- `X-Demo-User-Id` ไม่ได้พิสูจน์ตัวตน ผู้เรียกสามารถเปลี่ยนเลข ID ได้ จึงใช้เฉพาะข้อมูลและรหัสผ่านสมมติในการสาธิต
+- ถ้า endpoint ต้องการ ID แต่ไม่ได้ส่งหรือรูปแบบไม่ถูกต้อง ตอบ `400 VALIDATION_ERROR`; ถ้าไม่พบผู้ใช้ตาม ID ตอบ `404 NOT_FOUND`
 - frontend ใช้ API base URL จุดเดียว เมื่อได้ `image_url: "/uploads/items/abc.webp"` ให้แสดงรูปด้วย `API_BASE_URL + image_url`; ถ้าเป็น `null` ให้ใช้รูป placeholder ของหน้าเว็บ
 
 ### รูปแบบ error
@@ -28,8 +30,8 @@
 | HTTP | ใช้เมื่อ | ตัวอย่าง `code` |
 | --- | --- | --- |
 | 400 | ข้อมูลไม่ครบหรือรูปแบบไม่ถูกต้อง | `VALIDATION_ERROR` |
-| 401 | ไม่ได้ล็อกอิน, token หมดอายุ, หรืออีเมล/รหัสผ่านผิด | `UNAUTHORIZED`, `INVALID_CREDENTIALS` |
-| 403 | ล็อกอินแล้วแต่ไม่มีสิทธิ์กับรายการนี้ | `FORBIDDEN` |
+| 401 | อีเมลหรือรหัสผ่านไม่ตรง | `INVALID_CREDENTIALS` |
+| 403 | ID ใน header ไม่ใช่เจ้าของรายการ | `FORBIDDEN` |
 | 404 | ไม่พบข้อมูล หรือข้อมูลถูกซ่อนจากผู้เรียก | `NOT_FOUND` |
 | 409 | ข้อมูลซ้ำหรือสถานะไม่อนุญาตให้ทำรายการ | `CONFLICT`, `INVALID_STATE` |
 | 413 | ไฟล์ใหญ่เกินกำหนด | `FILE_TOO_LARGE` |
@@ -41,24 +43,26 @@
 
 ## Endpoint ทั้งหมด
 
-| Method | Path | Login | หน้าที่ |
+| Method | Path | Demo user | หน้าที่ |
 | --- | --- | --- | --- |
 | GET | `/api/health` | ไม่ต้อง | ตรวจว่า Node.js ทำงาน |
 | GET | `/api/health/db` | ไม่ต้อง | ตรวจ PostgreSQL |
 | POST | `/api/auth/register` | ไม่ต้อง | สมัครสมาชิก |
 | POST | `/api/auth/login` | ไม่ต้อง | ล็อกอิน |
-| GET | `/api/me` | ต้อง | ดูข้อมูลตัวเอง |
-| GET | `/api/me/items` | ต้อง | ดูโพสต์ของตัวเอง |
+| GET | `/api/me` | ส่ง ID | ดูข้อมูลผู้ใช้ตาม ID ใน header |
+| GET | `/api/me/items` | ส่ง ID | ดูโพสต์ของผู้ใช้ตาม ID ใน header |
 | GET | `/api/categories` | ไม่ต้อง | ดูหมวดหมู่ |
 | GET | `/api/items` | ไม่ต้อง | ฟีด ค้นหา กรอง และแบ่งหน้า |
 | GET | `/api/items/:id` | ไม่ต้อง | ดูรายละเอียดโพสต์ |
-| POST | `/api/items` | ต้อง | สร้างโพสต์พร้อมรูป |
+| POST | `/api/items` | ส่ง ID | สร้างโพสต์พร้อมรูป |
 | PATCH | `/api/items/:id` | เจ้าของ | แก้ข้อความของโพสต์ |
 | DELETE | `/api/items/:id` | เจ้าของ | ซ่อนโพสต์ (เปลี่ยนสถานะเป็น `removed`) |
-| POST | `/api/items/:id/requests` | ต้อง | ขอรับฟรีหรือยื่นข้อเสนอแลก |
-| GET | `/api/requests?role=sent` | ต้อง | ดูคำขอที่ส่ง |
-| GET | `/api/requests?role=received` | ต้อง | ดูคำขอที่ได้รับ |
+| POST | `/api/items/:id/requests` | ส่ง ID | ขอรับฟรีหรือยื่นข้อเสนอแลก |
+| GET | `/api/requests?role=sent` | ส่ง ID | ดูคำขอที่ส่ง |
+| GET | `/api/requests?role=received` | ส่ง ID | ดูคำขอที่ได้รับ |
 | PATCH | `/api/requests/:id/decision` | เจ้าของโพสต์ | อนุมัติหรือปฏิเสธคำขอ |
+
+ค่า `ส่ง ID` และ `เจ้าของ` หมายถึงต้องส่ง `X-Demo-User-Id`; กรณี `เจ้าของ` API ตรวจว่า ID ใน header ตรงกับเจ้าของโพสต์
 
 ## Health checks
 
@@ -95,20 +99,19 @@
     "room_number": "A-304",
     "phone_number": "0812345678",
     "created_at": "2026-10-18T10:00:00.000Z"
-  },
-  "token": "<jwt>"
+  }
 }
 ```
 
-อีเมลซ้ำตอบ `409 CONFLICT` ผู้ใช้ใหม่ถือว่าล็อกอินแล้ว เพราะได้รับ token จากการสมัคร
+อีเมลซ้ำตอบ `409 CONFLICT` หลังสมัครสำเร็จให้เรียก `/api/auth/login` รหัสผ่านเก็บตรงในฐานข้อมูลสำหรับบัญชีสาธิตเท่านั้น และไม่ส่งรหัสผ่านกลับใน response
 
 ### POST /api/auth/login
 
-ส่ง `{"email":"nina@example.com","password":"example-password"}` ตอบ `200` ด้วย `user` และ `token` รูปแบบเดียวกับการสมัคร ถ้าอีเมลหรือรหัสผิดตอบ `401 INVALID_CREDENTIALS` โดยไม่บอกว่าส่วนใดผิด
+ส่ง `{"email":"nina@example.com","password":"example-password"}` ตอบ `200 {"user": { ... }}` โดย `user` มีฟิลด์เหมือน response การสมัคร (ไม่มี token) ถ้าอีเมลหรือรหัสผิดตอบ `401 INVALID_CREDENTIALS` โดยไม่บอกว่าส่วนใดผิด
 
 ### GET /api/me
 
-ตอบ `200 {"user": { ... }}` โดย `user` มีฟิลด์เหมือนตัวอย่างข้างบน เฉพาะผู้ใช้ที่ล็อกอินจึงเห็น email, room_number และ phone_number ของตัวเอง
+ส่ง `X-Demo-User-Id` แล้วตอบ `200 {"user": { ... }}` โดย `user` มีฟิลด์เหมือนตัวอย่างข้างบน ผู้ใช้ที่มี ID ตาม header จะเห็น email, room_number และ phone_number ของ ID นั้น
 
 ## หมวดหมู่
 
@@ -171,7 +174,7 @@ Query string (ทั้งหมดไม่จำเป็น): `q` ค้น�
 
 ### GET /api/me/items
 
-ตอบ `200 {"items": [ ... ]}` เป็นโพสต์ทุกสถานะของผู้ใช้ที่ล็อกอิน เรียงใหม่ไปเก่า ใช้รูปแบบ `item` เดียวกัน
+ตอบ `200 {"items": [ ... ]}` เป็นโพสต์ทุกสถานะของผู้ใช้ตาม `X-Demo-User-Id` เรียงใหม่ไปเก่า ใช้รูปแบบ `item` เดียวกัน
 
 ### POST /api/items
 
@@ -218,7 +221,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### POST /api/items/:id/requests
 
-ต้องล็อกอิน ส่ง `multipart/form-data` โดยใช้ข้อมูลตามชนิดโพสต์:
+ส่ง `X-Demo-User-Id` และ `multipart/form-data` โดยใช้ข้อมูลตามชนิดโพสต์:
 
 | Field | `free` | `swap` |
 | --- | --- | --- |
