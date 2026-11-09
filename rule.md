@@ -103,3 +103,28 @@ UX ครอบคลุมความรู้สึกและประส�
 ### 7.5 การทำงานเป็นทีม
 
 ใช้ Git ในการบริหารเวอร์ชันโค้ด และมีวัฒนธรรม Code Review ที่เน้นวิจารณ์ที่ตัวโค้ดไม่ใช่ตัวบุคคล
+
+---
+
+## 8. โครงสร้างไฟล์โปรเจกต์ (File Structure)
+
+แยกโค้ดฝั่ง frontend ออกจาก backend อย่างชัดเจน เพื่อรักษาความรับผิดชอบแยกจากกัน (Separation of Concerns)
+
+```
+Korna/
+├── frontend/           # โค้ดฝั่ง Frontend (HTML, CSS, Vanilla JS)
+│   ├── pages/          # หน้าเว็บต่างๆ เช่น login.html
+│   ├── assets/
+│   │   ├── css/        # ไฟล์สไตล์ CSS
+│   │   ├── js/         # ไฟล์ JavaScript (Vanilla JS เท่านั้น)
+│   │   └── images/     # รูปภาพและ static assets
+│   └── ...
+├── src/                # โค้ดฝั่ง Backend (Express, PostgreSQL, API)
+├── db/                 # ไฟล์ฐานข้อมูล (SQL schema, migration)
+├── docs/               # เอกสาร API และสเปกต์ร่วม
+└── ...
+```
+
+- **ห้ามวางไฟล์ frontend (HTML, CSS, JS) ภายในโฟลเดอร์ `src/`** ซึ่งสงวนไว้สำหรับโค้ดฝั่ง server เท่านั้น
+- **ห้ามวางไฟล์ backend ภายในโฟลเดอร์ `frontend/`**
+- แต่ละหน้าเว็บควรมีไฟล์ HTML ของตัวเองใน `frontend/pages/` และอ้างอิง CSS/JS จาก `frontend/assets/`
