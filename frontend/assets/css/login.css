@@ -31,7 +31,7 @@ body {
   justify-content: center;
   color: #FFFFFF;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 /* Login card */
@@ -53,21 +53,21 @@ body {
 
 .login-header h1 {
   margin: 0 0 8px;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #5E4636;
 }
 
 .login-header p {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: #8A6A4E;
 }
 
 /* Section */
 .login-section h2 {
   margin: 0 0 16px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #5E4636;
 }
@@ -86,7 +86,7 @@ fieldset {
 }
 
 legend {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #5E4636;
   margin-bottom: 10px;
@@ -105,7 +105,7 @@ legend {
 }
 
 label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #5E4636;
 }
@@ -114,7 +114,7 @@ input[type="email"],
 input[type="password"] {
   width: 100%;
   padding: 12px 12px 12px 44px;
-  font-size: 14px;
+  font-size: 13px;
   background-color: #FFF8E8;
   background-repeat: no-repeat;
   background-position: left 16px center;
@@ -166,7 +166,7 @@ input:invalid:not(:placeholder-shown) {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
   padding: 4px;
   display: flex;
@@ -187,7 +187,7 @@ input:invalid:not(:placeholder-shown) {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  font-size: 14px;
+  font-size: 13px;
   margin-top: 4px;
 }
 
@@ -223,7 +223,7 @@ input:invalid:not(:placeholder-shown) {
 }
 
 .form-actions a {
-  font-size: 14px;
+  font-size: 13px;
   color: #5E4636;
   text-decoration: none;
   margin-left: auto;
@@ -238,7 +238,7 @@ input:invalid:not(:placeholder-shown) {
 button[type="submit"] {
   width: 100%;
   padding: 12px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #5E4636;
   background-color: #F4C542;
@@ -265,7 +265,7 @@ button[type="submit"]:active {
 /* Signup link */
 .signup-link {
   margin-top: 16px;
-  font-size: 14px;
+  font-size: 13px;
   color: #8A6A4E;
   text-align: center;
 }
@@ -281,6 +281,13 @@ button[type="submit"]:active {
   text-decoration: underline;
 }
 
+
+footer {
+  text-align: center;
+  font-size: 11px;
+  color: #8A6A4E;
+  margin-top: 24px;
+}
 
 /* Responsive */
 @media (max-width: 480px) {
