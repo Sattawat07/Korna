@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in - KORNA</title>
+  <link rel="stylesheet" href="../assets/css/login.css">
+</head>
+<body>
+  <div class="logo-wrapper">
+    <div class="logo">Logo</div>
+  </div>
+
+  <main class="login-card">
+    <header class="login-header">
+      <h1>Welcome to KORNA</h1>
+      <p>Sign in to continue for exchange and share your items.</p>
+    </header>
+
+    <section class="login-section">
+      <h2>Sign in</h2>
+      <form action="/api/auth/login" method="POST">
+        <fieldset>
+          <div class="form-group email-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@mail.com" required>
+          </div>
+          <div class="form-group password-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility" aria-pressed="false">👁</button>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <input type="checkbox" id="remember" name="remember">
+          <label for="remember">Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <button type="submit">Sign in</button>
+      </form>
+
+      <p class="signup-link">Don't have an account? <a href="#">Sign up</a></p>
+    </section>
+  </main>
+</body>
+</html>
