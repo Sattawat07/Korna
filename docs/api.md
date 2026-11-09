@@ -1,17 +1,17 @@
 # Korna API
 
-รูปแบบ API สำหรับเว็บให้ฟรีและแลกของมือสอง ใช้เอกสารนี้เป็นข้อตกลงเรื่อง URL, request, response และสถานะของข้อมูล ระบบบัญชีในเอกสารนี้ใช้สำหรับสาธิตด้วยข้อมูลสมมติเท่านั้น
+รูปแบบ API สำหรับเว็บให้ฟรีและแลกของมือสอง ใช้เอกสารนี้เป็นข้อตกลงเรื่อง URL, request, response และสถานะของข้อมูล
 
 ## ข้อตกลงร่วม
 
-- ตัวอย่าง Base URL: `http://127.0.0.1:3000` (เปลี่ยน host ตามเครื่องที่รัน API)
+- ตัวอย่าง Base URL: `http://127.0.0.1:3000` (frontend และ API ใช้ origin เดียวกัน)
 - ทุก endpoint เริ่มด้วย `/api` ยกเว้น URL รูปที่เริ่มด้วย `/uploads/`
 - JSON ใช้ `snake_case` และส่ง `Content-Type: application/json` ยกเว้น endpoint ที่ระบุ `multipart/form-data`
 - วันที่เป็น ISO 8601 เช่น `2026-10-18T10:00:00.000Z`; ID เป็นตัวเลข
-- endpoint ที่ทำในนามผู้ใช้ส่ง header `X-Demo-User-Id: <user.id>` โดยใช้ ID ที่ได้จากการล็อกอิน; frontend เก็บ ID นี้ไว้ใน `sessionStorage`
-- `X-Demo-User-Id` ไม่ได้พิสูจน์ตัวตน ผู้เรียกสามารถเปลี่ยนเลข ID ได้ จึงใช้เฉพาะข้อมูลและรหัสผ่านสมมติในการสาธิต
-- ถ้า endpoint ต้องการ ID แต่ไม่ได้ส่งหรือรูปแบบไม่ถูกต้อง ตอบ `400 VALIDATION_ERROR`; ถ้าไม่พบผู้ใช้ตาม ID ตอบ `404 NOT_FOUND`
-- frontend ใช้ API base URL จุดเดียว เมื่อได้ `image_url: "/uploads/items/abc.webp"` ให้แสดงรูปด้วย `API_BASE_URL + image_url`; ถ้าเป็น `null` ให้ใช้รูป placeholder ของหน้าเว็บ
+- หลังล็อกอิน browser รับ session cookie `sid` แบบ `HttpOnly`, `SameSite=Lax`; frontend เรียก API ด้วย URL ที่ขึ้นต้น `/api` โดย browser ส่ง cookie ให้เอง
+- endpoint ที่ต้องล็อกอินแต่ไม่มี session ที่ใช้ได้ตอบ `401 UNAUTHENTICATED`; สิทธิ์ไม่พอตอบ `403 FORBIDDEN`
+- บัญชีใหม่มี role `user` เสมอ; `admin` กำหนดโดยผู้ดูแลระบบเท่านั้น ไม่รับ role จากแบบฟอร์มสมัคร
+- เมื่อได้ `image_url: "/uploads/items/abc.webp"` ให้แสดงรูปด้วย path นี้; ถ้าเป็น `null` ให้ใช้รูป placeholder ของหน้าเว็บ
 
 ### รูปแบบ error
 
@@ -30,8 +30,8 @@
 | HTTP | ใช้เมื่อ | ตัวอย่าง `code` |
 | --- | --- | --- |
 | 400 | ข้อมูลไม่ครบหรือรูปแบบไม่ถูกต้อง | `VALIDATION_ERROR` |
-| 401 | อีเมลหรือรหัสผ่านไม่ตรง | `INVALID_CREDENTIALS` |
-| 403 | ID ใน header ไม่ใช่เจ้าของรายการ | `FORBIDDEN` |
+| 401 | ไม่ได้ล็อกอิน, session หมดอายุ, หรืออีเมล/รหัสผ่านไม่ตรง | `UNAUTHENTICATED`, `INVALID_CREDENTIALS` |
+| 403 | ไม่มีสิทธิ์หรือไม่ใช่เจ้าของรายการ | `FORBIDDEN` |
 | 404 | ไม่พบข้อมูล หรือข้อมูลถูกซ่อนจากผู้เรียก | `NOT_FOUND` |
 | 409 | ข้อมูลซ้ำหรือสถานะไม่อนุญาตให้ทำรายการ | `CONFLICT`, `INVALID_STATE` |
 | 413 | ไฟล์ใหญ่เกินกำหนด | `FILE_TOO_LARGE` |
@@ -43,26 +43,27 @@
 
 ## Endpoint ทั้งหมด
 
-| Method | Path | Demo user | หน้าที่ |
+| Method | Path | สิทธิ์ | หน้าที่ |
 | --- | --- | --- | --- |
 | GET | `/api/health` | ไม่ต้อง | ตรวจว่า Node.js ทำงาน |
 | GET | `/api/health/db` | ไม่ต้อง | ตรวจ PostgreSQL |
 | POST | `/api/auth/register` | ไม่ต้อง | สมัครสมาชิก |
 | POST | `/api/auth/login` | ไม่ต้อง | ล็อกอิน |
-| GET | `/api/me` | ส่ง ID | ดูข้อมูลผู้ใช้ตาม ID ใน header |
-| GET | `/api/me/items` | ส่ง ID | ดูโพสต์ของผู้ใช้ตาม ID ใน header |
+| POST | `/api/auth/logout` | ผู้ใช้ | ออกจากระบบ |
+| GET | `/api/me` | ผู้ใช้ | ดูข้อมูลบัญชีตนเอง |
+| GET | `/api/me/items` | ผู้ใช้ | ดูโพสต์ของตนเอง |
 | GET | `/api/categories` | ไม่ต้อง | ดูหมวดหมู่ |
 | GET | `/api/items` | ไม่ต้อง | ฟีด ค้นหา กรอง และแบ่งหน้า |
 | GET | `/api/items/:id` | ไม่ต้อง | ดูรายละเอียดโพสต์ |
-| POST | `/api/items` | ส่ง ID | สร้างโพสต์พร้อมรูป |
+| POST | `/api/items` | ผู้ใช้ | สร้างโพสต์พร้อมรูป |
 | PATCH | `/api/items/:id` | เจ้าของ | แก้ข้อความของโพสต์ |
 | DELETE | `/api/items/:id` | เจ้าของ | ซ่อนโพสต์ (เปลี่ยนสถานะเป็น `removed`) |
-| POST | `/api/items/:id/requests` | ส่ง ID | ขอรับฟรีหรือยื่นข้อเสนอแลก |
-| GET | `/api/requests?role=sent` | ส่ง ID | ดูคำขอที่ส่ง |
-| GET | `/api/requests?role=received` | ส่ง ID | ดูคำขอที่ได้รับ |
+| POST | `/api/items/:id/requests` | ผู้ใช้ | ขอรับฟรีหรือยื่นข้อเสนอแลก |
+| GET | `/api/requests?role=sent` | ผู้ใช้ | ดูคำขอที่ส่ง |
+| GET | `/api/requests?role=received` | ผู้ใช้ | ดูคำขอที่ได้รับ |
 | PATCH | `/api/requests/:id/decision` | เจ้าของโพสต์ | อนุมัติหรือปฏิเสธคำขอ |
 
-ค่า `ส่ง ID` และ `เจ้าของ` หมายถึงต้องส่ง `X-Demo-User-Id`; กรณี `เจ้าของ` API ตรวจว่า ID ใน header ตรงกับเจ้าของโพสต์
+กรณี `เจ้าของ` API ตรวจ user ID จาก session ว่าตรงกับเจ้าของโพสต์; role `admin` ยังไม่มี endpoint เฉพาะในสัญญานี้
 
 ## Health checks
 
@@ -96,6 +97,7 @@
     "id": 1,
     "name": "Nina",
     "email": "nina@example.com",
+    "role": "user",
     "room_number": "A-304",
     "phone_number": "0812345678",
     "created_at": "2026-10-18T10:00:00.000Z"
@@ -103,15 +105,19 @@
 }
 ```
 
-อีเมลซ้ำตอบ `409 CONFLICT` หลังสมัครสำเร็จให้เรียก `/api/auth/login` รหัสผ่านเก็บตรงในฐานข้อมูลสำหรับบัญชีสาธิตเท่านั้น และไม่ส่งรหัสผ่านกลับใน response
+อีเมลซ้ำตอบ `409 CONFLICT` หลังสมัครสำเร็จให้เรียก `/api/auth/login` รหัสผ่านผ่าน Argon2id พร้อม salt สุ่มเฉพาะบัญชี เก็บ hash และ salt ในฐานข้อมูล ไม่ส่งค่าเหล่านี้กลับใน response และไม่รับ `role` จากผู้สมัคร
 
 ### POST /api/auth/login
 
-ส่ง `{"email":"nina@example.com","password":"example-password"}` ตอบ `200 {"user": { ... }}` โดย `user` มีฟิลด์เหมือน response การสมัคร (ไม่มี token) ถ้าอีเมลหรือรหัสผิดตอบ `401 INVALID_CREDENTIALS` โดยไม่บอกว่าส่วนใดผิด
+ส่ง `{"email":"nina@example.com","password":"example-password"}` ตอบ `200 {"user": { ... }}` พร้อม `Set-Cookie: sid=...` โดย `user` มีฟิลด์เหมือน response การสมัครและ `role`; ไม่มี token ใน JSON ถ้าอีเมลหรือรหัสผิดตอบ `401 INVALID_CREDENTIALS` โดยไม่บอกว่าส่วนใดผิด
+
+### POST /api/auth/logout
+
+ทำลาย session ในฐานข้อมูลและล้าง cookie `sid`; ตอบ `204` โดยไม่มี body
 
 ### GET /api/me
 
-ส่ง `X-Demo-User-Id` แล้วตอบ `200 {"user": { ... }}` โดย `user` มีฟิลด์เหมือนตัวอย่างข้างบน ผู้ใช้ที่มี ID ตาม header จะเห็น email, room_number และ phone_number ของ ID นั้น
+ใช้ session cookie แล้วตอบ `200 {"user": { ... }}` โดย `user` มีฟิลด์เหมือนตัวอย่างข้างบนและ `role` ผู้ใช้เห็น email, room_number และ phone_number ของตัวเอง
 
 ## หมวดหมู่
 
@@ -174,7 +180,7 @@ Query string (ทั้งหมดไม่จำเป็น): `q` ค้น�
 
 ### GET /api/me/items
 
-ตอบ `200 {"items": [ ... ]}` เป็นโพสต์ทุกสถานะของผู้ใช้ตาม `X-Demo-User-Id` เรียงใหม่ไปเก่า ใช้รูปแบบ `item` เดียวกัน
+ตอบ `200 {"items": [ ... ]}` เป็นโพสต์ทุกสถานะของผู้ใช้จาก session เรียงใหม่ไปเก่า ใช้รูปแบบ `item` เดียวกัน
 
 ### POST /api/items
 
@@ -221,7 +227,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### POST /api/items/:id/requests
 
-ส่ง `X-Demo-User-Id` และ `multipart/form-data` โดยใช้ข้อมูลตามชนิดโพสต์:
+ส่ง session cookie และ `multipart/form-data` โดยใช้ข้อมูลตามชนิดโพสต์:
 
 | Field | `free` | `swap` |
 | --- | --- | --- |

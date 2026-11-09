@@ -17,13 +17,18 @@ function port(name, fallback) {
   return value;
 }
 
+const sessionSecret = required('SESSION_SECRET');
+if (Buffer.byteLength(sessionSecret, 'utf8') < 32) {
+  throw new Error('SESSION_SECRET must contain at least 32 bytes.');
+}
+
 export const config = {
   host: process.env.HOST?.trim() || '127.0.0.1',
   port: port('PORT', 3000),
-  corsOrigins: (process.env.CORS_ORIGINS ?? '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  sessionSecret,
+  secureCookie: process.env.COOKIE_SECURE === 'true',
+  trustProxy: process.env.TRUST_PROXY === 'true',
+  frontendDir: fileURLToPath(new URL('../frontend/', import.meta.url)),
   uploadDir: fileURLToPath(new URL('../uploads/', import.meta.url)),
   database: {
     host: required('PGHOST'),

@@ -1,18 +1,29 @@
 -- Run while connected to the "korna" database.
--- This script creates the six tables for the demo; it does not delete existing data.
+-- Run only for a fresh database; use migrate_session_auth.sql for an existing one.
 BEGIN;
 
 CREATE TABLE users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_name VARCHAR(100) NOT NULL,
     user_email VARCHAR(255) NOT NULL UNIQUE,
-    user_password TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    role VARCHAR(10) NOT NULL DEFAULT 'user',
     user_room_number VARCHAR(20) NOT NULL,
     user_phone_number VARCHAR(20),
     user_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT users_name_not_blank CHECK (LENGTH(TRIM(user_name)) > 0),
-    CONSTRAINT users_room_not_blank CHECK (LENGTH(TRIM(user_room_number)) > 0)
+    CONSTRAINT users_room_not_blank CHECK (LENGTH(TRIM(user_room_number)) > 0),
+    CONSTRAINT users_role_valid CHECK (role IN ('user', 'admin'))
 );
+
+-- connect-pg-simple stores session data here; only the signed session ID is in the cookie.
+CREATE TABLE sessions (
+    sid VARCHAR NOT NULL PRIMARY KEY,
+    sess JSON NOT NULL,
+    expire TIMESTAMP(6) NOT NULL
+);
+CREATE INDEX sessions_expire_idx ON sessions (expire);
 
 CREATE TABLE categories (
     category_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
