@@ -3,15 +3,15 @@ import { pool } from '../db.js';
 
 export const categoriesRouter = Router();
 
-categoriesRouter.get('/', async (_request, response) => {
+categoriesRouter.get('/', async (_req, res) => {
 	try {
 		const { rows } = await pool.query(`
-      SELECT category_id, category_name
-      FROM categories
-      ORDER BY category_id
-    `);
+			SELECT category_id, category_name
+			FROM categories
+			ORDER BY category_id`
+		);
 
-		response.json({
+		res.json({
 			categories: rows.map((row) => ({
 				id: Number(row.category_id),
 				name: row.category_name,
@@ -19,7 +19,7 @@ categoriesRouter.get('/', async (_request, response) => {
 		});
 	} catch (error) {
 		console.error('Failed to load categories:', error);
-		response.status(503).json({
+		res.status(503).json({
 			error: {
 				code: 'DATABASE_UNAVAILABLE',
 				message: 'Categories are temporarily unavailable.',

@@ -5,6 +5,7 @@ import connectPgSimple from 'connect-pg-simple';
 import { config } from './config.js';
 import { pool } from './db.js';
 import { categoriesRouter } from './routes/categories.js';
+import { authRouter } from './routes/auth.js';
 
 await mkdir(config.uploadDir, { recursive: true });
 
@@ -28,6 +29,7 @@ app.use(session({
 app.use(express.json({ limit: '1mb' }));
 app.use('/uploads', express.static(config.uploadDir, { index: false, dotfiles: 'deny' }));
 app.use('/api/categories', categoriesRouter);
+app.use('/api/auth', authRouter);
 
 app.get('/api/health', (_request, response) => {
 	response.json({ status: 'ok' });
