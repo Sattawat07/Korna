@@ -78,6 +78,10 @@ export function confirmResendOtp(challengeId, reservationId) {
 	const signupChallenge = signupChallenges.get(challengeId);
 	if (!signupChallenge)
 		return { status: 'expired' };
+	if (Date.now() >= signupChallenge.expiresAt) {
+		deleteSignupChallenge(challengeId);
+		return { status: 'expired' };
+	}
 
 	const pendingResend = signupChallenge.pendingResend;
 	if (!pendingResend || pendingResend.reservationId !== reservationId)

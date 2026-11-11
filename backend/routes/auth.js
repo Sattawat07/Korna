@@ -7,6 +7,9 @@ import {
 	createSignupChallenge,
 	deleteSignupChallenge,
 	verifySignupOtp,
+	prepareResendOtp,
+	confirmResendOtp,
+	cancelResendOtp,
 } from '../signup-challenges.js';
 
 export const authRouter = Router();
@@ -139,14 +142,18 @@ authRouter.post('/register/verify', async (req, res) => {
 				message: 'Verification code has expired. Please register again.',
 			},
 		});
-	} else if (verificationResult.status === 'invalid') {
+	}
+
+	if (verificationResult.status === 'invalid') {
 		return res.status(400).json({
 			error: {
 				code: 'INVALID_OTP',
 				message: 'Invalid verification code.',
 			}
 		});
-	} else if (verificationResult.status === 'too_many_attempts') {
+	}
+
+	if (verificationResult.status === 'too_many_attempts') {
 		return res.status(429).json({
 			error: {
 				code: 'TOO_MANY_ATTEMPTS',
@@ -236,6 +243,91 @@ authRouter.post('/register/verify', async (req, res) => {
 			error: {
 				code: 'DATABASE_UNAVAILABLE',
 				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+});
+
+authRouter.post('/register/resend', async (req, res) => {
+	const challengeId = req.cookies?.signup_challenge;
+
+	if (!challengeId) {
+		return res.status(410).json({
+			error: {
+				code: 'OTP_EXPIRED',
+				message: 'Verification code has expired. Please register again.',
+			},
+		});
+	}
+
+	const resendResult = prepareResendOtp(challengeId);
+	if (resendResult.status === 'expired') {
+		return res.status(410).json({
+			error: {
+				code: 'OTP_EXPIRED',
+				message: 'Verification code has expired. Please register again.',
+			},
+		});
+	}
+
+	if (resendResult.status === 'too_many_attempts') {
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Too many incorrect verification attempts.',
+			},
+		});
+	}
+
+	if (resendResult.status === 'too_soon') {
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Please wait before requesting another verification code.',
+			},
+		});
+	}
+
+	try {
+		await sendSignupOtp(resendResult.email, resendResult.newOtp);
+		const confirmResult = confirmResendOtp(challengeId, resendResult.reservationId);
+
+		if (confirmResult.status === 'expired') {
+			return res.status(410).json({
+				error: {
+					code: 'OTP_EXPIRED',
+					message: 'Verification code has expired. Please register again.',
+				},
+			});
+		}
+
+		if (confirmResult.status === 'invalid_reservation') {
+			return res.status(409).json({
+				error: {
+					code: 'INVALID_STATE',
+					message: 'Unable to complete the resend request.',
+				},
+			});
+		}
+
+		res.cookie('signup_challenge', challengeId, {
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: config.secureCookie,
+			maxAge: 5 * 60 * 1000,
+		});
+
+		return res.status(202).json({
+			message: 'Verification code sent',
+			expires_in_seconds: 300,
+		});
+	} catch (error) {
+		cancelResendOtp(challengeId, resendResult.reservationId);
+		console.error('Failed to resend signup OTP:', error);
+		return res.status(502).json({
+			error: {
+				code: 'EMAIL_DELIVERY_FAILED',
+				message: 'Unable to send the verification code right now.',
 			},
 		});
 	}
