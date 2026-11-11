@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import express from 'express';
 import session from 'express-session';
+import cookieParser from "cookie-parser";
 import connectPgSimple from 'connect-pg-simple';
 import { config } from './config.js';
 import { pool } from './db.js';
@@ -27,6 +28,7 @@ app.use(session({
 	},
 }));
 app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 app.use('/uploads', express.static(config.uploadDir, { index: false, dotfiles: 'deny' }));
 app.use('/api/categories', categoriesRouter);
 app.use('/api/auth', authRouter);

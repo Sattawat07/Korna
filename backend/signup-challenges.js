@@ -2,6 +2,14 @@ import { randomInt, randomBytes } from "node:crypto";
 
 const signupChallenges = new Map();
 
+export function removeExpiredSignupChallenges(now = Date.now()) {
+	for (const [challengeId, challenge] of signupChallenges) {
+		if (now >= challenge.expiresAt) signupChallenges.delete(challengeId);
+	}
+}
+
+setInterval(removeExpiredSignupChallenges, 60 * 1000).unref();
+
 export function createSignupChallenge(signupData, passwordHash, passwordSalt) {
 	const otp = String(randomInt(0, 1_000_000)).padStart(6, "0");
 	const challengeId = randomBytes(32).toString("hex");
@@ -64,7 +72,10 @@ export function prepareResendOtp(challengeId) {
 	if (dateNow - signupChallenge.lastSentAt < 60 * 1000 || signupChallenge.pendingResend !== null)
 		return { status: 'too_soon' };
 
-	const newOtp = String(randomInt(0, 1_000_000)).padStart(6, '0');
+	let newOtp;
+	do {
+		newOtp = String(randomInt(0, 1_000_000)).padStart(6, '0');
+	} while (newOtp === signupChallenge.otp);
 	const reservationId = randomBytes(16).toString('hex');
 
 	signupChallenge.pendingResend = {
@@ -78,6 +89,10 @@ export function confirmResendOtp(challengeId, reservationId) {
 	const signupChallenge = signupChallenges.get(challengeId);
 	if (!signupChallenge)
 		return { status: 'expired' };
+	if (Date.now() >= signupChallenge.expiresAt) {
+		deleteSignupChallenge(challengeId);
+		return { status: 'expired' };
+	}
 
 	const pendingResend = signupChallenge.pendingResend;
 	if (!pendingResend || pendingResend.reservationId !== reservationId)
