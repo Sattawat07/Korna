@@ -5,7 +5,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "node --watch backend/server.js",
-		"start": "node backend/server.js"
+		"start": "node backend/server.js",
+		"test": "node --test"
 	},
 	"engines": {
 		"node": ">=22"

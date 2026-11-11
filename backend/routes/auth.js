@@ -3,6 +3,7 @@ import { config } from '../config.js';
 import { pool } from '../db.js';
 import { sendSignupOtp } from '../mail.js';
 import { hashPassword, verifyPassword } from '../password.js';
+import { checkSignupRateLimit } from '../signup-rate-limit.js';
 import {
 	createSignupChallenge,
 	deleteSignupChallenge,
@@ -45,6 +46,17 @@ authRouter.post('/register', async (req, res) => {
 				code: 'VALIDATION_ERROR',
 				message: 'Please check the submitted fields.',
 				details,
+			},
+		});
+	}
+
+	const rateLimit = checkSignupRateLimit(normalizedEmail, req.ip ?? req.socket.remoteAddress ?? 'unknown');
+	if (!rateLimit.allowed) {
+		res.set('Retry-After', String(rateLimit.retryAfterSeconds));
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Please wait before registering again.',
 			},
 		});
 	}

@@ -2,6 +2,14 @@ import { randomInt, randomBytes } from "node:crypto";
 
 const signupChallenges = new Map();
 
+export function removeExpiredSignupChallenges(now = Date.now()) {
+	for (const [challengeId, challenge] of signupChallenges) {
+		if (now >= challenge.expiresAt) signupChallenges.delete(challengeId);
+	}
+}
+
+setInterval(removeExpiredSignupChallenges, 60 * 1000).unref();
+
 export function createSignupChallenge(signupData, passwordHash, passwordSalt) {
 	const otp = String(randomInt(0, 1_000_000)).padStart(6, "0");
 	const challengeId = randomBytes(32).toString("hex");
