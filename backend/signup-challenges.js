@@ -64,7 +64,10 @@ export function prepareResendOtp(challengeId) {
 	if (dateNow - signupChallenge.lastSentAt < 60 * 1000 || signupChallenge.pendingResend !== null)
 		return { status: 'too_soon' };
 
-	const newOtp = String(randomInt(0, 1_000_000)).padStart(6, '0');
+	let newOtp;
+	do {
+		newOtp = String(randomInt(0, 1_000_000)).padStart(6, '0');
+	} while (newOtp === signupChallenge.otp);
 	const reservationId = randomBytes(16).toString('hex');
 
 	signupChallenge.pendingResend = {
