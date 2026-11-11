@@ -6,6 +6,7 @@ import { hashPassword } from '../password.js';
 import {
 	createSignupChallenge,
 	deleteSignupChallenge,
+	verifySignupOtp,
 } from '../signup-challenges.js';
 
 export const authRouter = Router();
@@ -115,4 +116,127 @@ authRouter.post('/register', async (req, res) => {
 		message: 'Verification code sent',
 		expires_in_seconds: 300,
 	});
+});
+
+authRouter.post('/register/verify', async (req, res) => {
+	const challengeId = req.cookies?.signup_challenge;
+
+	if (!challengeId) {
+		return res.status(410).json({
+			error: {
+				code: 'OTP_EXPIRED',
+				message: 'Verification code has expired. Please register again.',
+			},
+		});
+	}
+
+	const otp = req.body?.otp;
+	const verificationResult = verifySignupOtp(challengeId, otp);
+	if (verificationResult.status === 'expired') {
+		return res.status(410).json({
+			error: {
+				code: 'OTP_EXPIRED',
+				message: 'Verification code has expired. Please register again.',
+			},
+		});
+	} else if (verificationResult.status === 'invalid') {
+		return res.status(400).json({
+			error: {
+				code: 'INVALID_OTP',
+				message: 'Invalid verification code.',
+			}
+		});
+	} else if (verificationResult.status === 'too_many_attempts') {
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Too many incorrect verification attempts.',
+			}
+		});
+	}
+
+	try {
+		const { rows } = await pool.query(`
+			SELECT 1
+			FROM users
+			WHERE user_email = $1
+			LIMIT 1`,
+			[verificationResult.signupData.email]
+		);
+
+		if (rows.length > 0) {
+			return res.status(409).json({
+				error: {
+					code: 'CONFLICT',
+					message: 'This email is already registered.',
+				},
+			});
+		}
+	} catch (error) {
+		console.error('Failed to check email:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+
+	try {
+		const { signupData, passwordHash, passwordSalt } = verificationResult;
+		const { rows } = await pool.query(`
+			INSERT INTO users (
+				user_name,
+				user_email,
+				password_hash,
+				password_salt,
+				role,
+				user_room_number,
+				user_phone_number
+			)
+			VALUES ($1, $2, $3, $4, 'user', $5, $6)
+			ON CONFLICT (user_email) DO NOTHING
+			RETURNING
+				user_id AS id,
+				user_name AS name,
+				user_email AS email,
+				role,
+				user_room_number AS room_number,
+				user_phone_number AS phone_number,
+				user_created_at AS created_at`,
+			[
+				signupData.name,
+				signupData.email,
+				passwordHash,
+				passwordSalt,
+				signupData.room_number,
+				signupData.phone_number,
+			]
+		);
+
+		if (rows.length === 0) {
+			return res.status(409).json({
+				error: {
+					code: 'CONFLICT',
+					message: 'This email is already registered.',
+				},
+			});
+		}
+
+		deleteSignupChallenge(challengeId);
+		res.clearCookie('signup_challenge', {
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: config.secureCookie,
+		});
+		return res.status(201).json({ user: rows[0] });
+	} catch (error) {
+		console.error('Failed to create user:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
 });
