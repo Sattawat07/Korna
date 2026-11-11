@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { config } from '../config.js';
 import { pool } from '../db.js';
 import { sendSignupOtp } from '../mail.js';
-import { hashPassword } from '../password.js';
+import { hashPassword, verifyPassword } from '../password.js';
 import {
 	createSignupChallenge,
 	deleteSignupChallenge,
@@ -236,7 +236,7 @@ authRouter.post('/register/verify', async (req, res) => {
 			sameSite: 'lax',
 			secure: config.secureCookie,
 		});
-		return res.status(201).json({ user: rows[0] });
+		return res.status(201).json({ user: { ...rows[0], id: Number(rows[0].id) } });
 	} catch (error) {
 		console.error('Failed to create user:', error);
 		return res.status(503).json({
@@ -331,4 +331,119 @@ authRouter.post('/register/resend', async (req, res) => {
 			},
 		});
 	}
+});
+
+authRouter.post("/login", async (req, res) => {
+	const { email, password } = req.body ?? {};
+	const details = {};
+
+	const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+	if (!normalizedEmail || normalizedEmail.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
+		details.email = 'Enter a valid email address of at most 255 characters';
+
+	if (typeof password !== 'string' || password.length < 8)
+		details.password = 'Password must be at least 8 characters';
+
+	if (Object.keys(details).length > 0) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details,
+			},
+		});
+	}
+
+	let user;
+	try {
+		const { rows } = await pool.query(`
+			SELECT
+				user_id AS id,
+				user_name AS name,
+				user_email AS email,
+				password_hash,
+				role,
+				user_room_number AS room_number,
+				user_phone_number AS phone_number,
+				user_created_at AS created_at
+			FROM users
+			WHERE user_email = $1
+			LIMIT 1;`,
+			[normalizedEmail]
+		);
+
+		if (rows.length === 0) {
+			return res.status(401).json({
+				error: {
+					code: 'INVALID_CREDENTIALS',
+					message: 'Invalid email or password.',
+				},
+			});
+		}
+		user = rows[0];
+	} catch (error) {
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+
+	try {
+		const isPasswordValid = await verifyPassword(user.password_hash, password);
+		if (!isPasswordValid) {
+			return res.status(401).json({
+				error: {
+					code: 'INVALID_CREDENTIALS',
+					message: 'Invalid email or password.',
+				},
+			});
+		}
+	} catch (error) {
+		return res.status(500).json({
+			error: {
+				code: 'INTERNAL_ERROR',
+				message: 'Unable to log in right now.',
+			},
+		});
+	}
+
+	req.session.regenerate((error) => {
+		if (error) {
+			console.error('Failed to regenerate session:', error);
+			return res.status(503).json({
+				error: {
+					code: 'DATABASE_UNAVAILABLE',
+					message: 'Database is temporarily unavailable.',
+				},
+			});
+		}
+
+		req.session.userId = user.id;
+
+		return req.session.save((error) => {
+			if (error) {
+				console.error('Failed to save login session:', error);
+				return res.status(503).json({
+					error: {
+						code: 'DATABASE_UNAVAILABLE',
+						message: 'Database is temporarily unavailable.',
+					},
+				});
+			}
+
+			return res.status(200).json({
+				user: {
+					id: Number(user.id),
+					name: user.name,
+					email: user.email,
+					role: user.role,
+					room_number: user.room_number,
+					phone_number: user.phone_number,
+					created_at: user.created_at,
+				},
+			});
+		});
+	});
 });
