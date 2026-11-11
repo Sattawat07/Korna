@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +19,7 @@
 
     <section class="login-section">
       <h2>Sign in</h2>
-      <form action="/api/auth/login" method="POST">
+      <form novalidate method="POST">
         <fieldset>
           <div class="form-group email-group">
             <label for="email">Email address</label>
@@ -27,8 +27,10 @@
           </div>
           <div class="form-group password-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter your password" required>
-            <button type="button" class="password-toggle" aria-label="Toggle password visibility" aria-pressed="false">👁</button>
+            <input type="password" id="password" name="password" class="password-input" placeholder="Enter your password" required>
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility" aria-pressed="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="#5E4636"><path d="M15.19,14.69q1.31-1.31 1.31-3.19T15.19,8.31T12,7T8.81,8.31T7.5,11.5t1.31,3.19T12,16t3.19-1.31Zm-5.1-1.28Q9.3,12.63 9.3,11.5t0.79-1.91T12,8.8t1.91,0.79q0.79,0.79 0.79,1.91t-0.79,1.91T12,14.2t-1.91-0.79ZM5.35,16.96Q2.35,14.93 1,11.5Q2.35,8.07 5.35,6.04T12,4t6.65,2.04T23,11.5q-1.35,3.42-4.35,5.46T12,19T5.35,16.96ZM12,11.5Zm5.19,4.01q2.36-1.49 3.61-4.01q-1.25-2.53-3.61-4.01T12,6Q9.18,6 6.81,7.49T3.2,11.5q1.25,2.52 3.61,4.01T12,17t5.19-1.49Z"/></svg>
+          </button>
           </div>
         </fieldset>
 
@@ -41,8 +43,13 @@
         <button type="submit">Sign in</button>
       </form>
 
-      <p class="signup-link">Don't have an account? <a href="#">Sign up</a></p>
+      <p class="signup-link">Don't have an account? <a href="signup.html">Sign up</a></p>
     </section>
   </main>
+
+  <footer>
+  </footer>
+
+  <script type="module" src="../assets/js/pages/login.js"></script>
 </body>
 </html>
