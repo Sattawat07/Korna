@@ -447,3 +447,34 @@ authRouter.post("/login", async (req, res) => {
 		});
 	});
 });
+
+authRouter.post('/logout', (req, res) => {
+	if (!req.session?.userId) {
+		return res.status(401).json({
+			error: {
+				code: 'UNAUTHENTICATED',
+				message: 'Please log in first.',
+			},
+		});
+	}
+
+	req.session.destroy((error) => {
+		if (error) {
+			console.error('Failed to destroy session:', error);
+			return res.status(503).json({
+				error: {
+					code: 'DATABASE_UNAVAILABLE',
+					message: 'Database is temporarily unavailable.',
+				},
+			});
+		}
+
+		res.clearCookie('sid', {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: config.secureCookie,
+		});
+		return res.status(204).end();
+	});
+});
