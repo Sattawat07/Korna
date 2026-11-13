@@ -3,6 +3,7 @@ import { config } from '../config.js';
 import { pool } from '../db.js';
 import { sendSignupOtp } from '../mail.js';
 import { hashPassword, verifyPassword } from '../password.js';
+import { REMEMBERED_SESSION_MAX_AGE_MS } from '../session-store.js';
 import { checkSignupRateLimit } from '../signup-rate-limit.js';
 import {
 	createSignupChallenge,
@@ -346,7 +347,7 @@ authRouter.post('/register/resend', async (req, res) => {
 });
 
 authRouter.post("/login", async (req, res) => {
-	const { email, password } = req.body ?? {};
+	const { email, password, remember_me } = req.body ?? {};
 	const details = {};
 
 	const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -355,6 +356,9 @@ authRouter.post("/login", async (req, res) => {
 
 	if (typeof password !== 'string' || password.length < 8)
 		details.password = 'Password must be at least 8 characters';
+
+	if (remember_me !== undefined && typeof remember_me !== 'boolean')
+		details.remember_me = 'Remember me must be true or false';
 
 	if (Object.keys(details).length > 0) {
 		return res.status(400).json({
@@ -433,6 +437,7 @@ authRouter.post("/login", async (req, res) => {
 		}
 
 		req.session.userId = user.id;
+		req.session.cookie.maxAge = remember_me === true ? REMEMBERED_SESSION_MAX_AGE_MS : null;
 
 		return req.session.save((error) => {
 			if (error) {
