@@ -1,9 +1,15 @@
 import { Router } from 'express';
 import { config } from '../config.js';
 import { pool } from '../db.js';
-import { sendSignupOtp } from '../mail.js';
+import { sendPasswordResetOtp, sendSignupOtp } from '../mail.js';
 import { hashPassword, verifyPassword } from '../password.js';
+import {
+	createPasswordResetChallenge,
+	deletePasswordResetChallenge,
+	RESET_CHALLENGE_TTL_MS,
+} from '../password-reset-challenges.js';
 import { REMEMBERED_SESSION_MAX_AGE_MS } from '../session-store.js';
+import { checkPasswordResetRateLimit } from '../password-reset-rate-limit.js';
 import { checkSignupRateLimit } from '../signup-rate-limit.js';
 import {
 	createSignupChallenge,
@@ -493,5 +499,98 @@ authRouter.post('/logout', (req, res) => {
 			secure: config.secureCookie,
 		});
 		return res.status(204).end();
+	});
+});
+
+authRouter.post('/forgot-password/request', async (req, res) => {
+	const email = req.body?.email;
+	const details = {};
+
+	const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+	if (!normalizedEmail || normalizedEmail.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
+		details.email = 'Enter a valid email address of at most 255 characters';
+
+	if (Object.keys(details).length > 0) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details,
+			},
+		});
+	}
+
+	const rateLimit = checkPasswordResetRateLimit(normalizedEmail, req.ip ?? req.socket.remoteAddress ?? 'unknown');
+	if (!rateLimit.allowed) {
+		res.set('Retry-After', String(rateLimit.retryAfterSeconds));
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Please wait before requesting another password reset code.',
+			},
+		});
+	}
+
+	let resetUserId = null;
+	try {
+		const { rows } = await pool.query(`
+			SELECT user_id AS id
+			FROM users
+			WHERE user_email = $1
+			LIMIT 1;`,
+			[normalizedEmail]
+		);
+		resetUserId = rows[0]?.id ?? null;
+	} catch (error) {
+		console.error('Failed to look up password reset account:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+
+	let resetChallenge;
+	try {
+		resetChallenge = createPasswordResetChallenge(resetUserId);
+	} catch (error) {
+		console.error('Failed to prepare password reset challenge:', error);
+		return res.status(500).json({
+			error: {
+				code: 'INTERNAL_ERROR',
+				message: 'Unable to request a password reset right now.',
+			},
+		});
+	}
+
+	if (resetUserId != null) {
+		try {
+			await sendPasswordResetOtp(normalizedEmail, resetChallenge.otp);
+		} catch (error) {
+			console.error('Failed to send password reset email:', error);
+			deletePasswordResetChallenge(resetChallenge.challengeId);
+			try {
+				resetChallenge = createPasswordResetChallenge(null);
+			} catch (challengeError) {
+				console.error('Failed to prepare fallback password reset challenge:', challengeError);
+				return res.status(500).json({
+					error: {
+						code: 'INTERNAL_ERROR',
+						message: 'Unable to request a password reset right now.',
+					},
+				});
+			}
+		}
+	}
+
+	res.cookie('reset_challenge', resetChallenge.challengeId, {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+		maxAge: RESET_CHALLENGE_TTL_MS,
+	});
+	return res.status(202).json({
+		message: 'If this account exists, a verification code has been sent.',
 	});
 });
