@@ -1,19 +1,24 @@
 {
-  "name": "korna-backend",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^18.0.8",
-    "express": "^5.3.0",
-    "pg": "^8.23.1"
-  }
+	"name": "korna-backend",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "node --watch backend/server.js",
+		"start": "node backend/server.js",
+		"test": "node --test"
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"dependencies": {
+		"argon2": "^0.45.2",
+		"connect-pg-simple": "^10.0.0",
+		"cookie-parser": "^1.4.7",
+		"dotenv": "^18.0.8",
+		"express": "^5.3.0",
+		"express-session": "^1.19.0",
+		"nodemailer": "^10.5.0",
+		"pg": "^8.23.1"
+	}
 }
