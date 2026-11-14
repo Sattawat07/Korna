@@ -170,3 +170,89 @@ meRouter.patch('/', requireAuth, async (req, res) => {
 		});
 	}
 });
+
+meRouter.get('/items', requireAuth, async (req, res) => {
+	const userId = req.user.id;
+
+	try {
+		const { rows } = await pool.query(`
+			SELECT
+				i.*,
+				c.category_id,
+				c.category_name,
+				u.user_name AS owner_name,
+				sd.desired_description,
+				dc.category_id AS desired_category_id,
+				dc.category_name AS desired_category_name,
+				COALESCE((
+					SELECT json_agg(json_build_object(
+						'id', im.image_id, 'url', im.image_url, 'position', im.position
+					) ORDER BY im.position, im.image_id)
+					FROM item_images im
+					WHERE im.image_item_id = i.item_id
+				), '[]'::json) AS images,
+				(
+					SELECT im.image_url
+					FROM item_images im
+					WHERE im.image_item_id = i.item_id
+					ORDER BY im.position, im.image_id
+					LIMIT 1
+				) AS image_url,
+				(
+					SELECT COUNT(*)
+					FROM requests r
+					WHERE r.request_item_id = i.item_id
+				) AS requests_count
+			FROM items i
+			JOIN categories c ON c.category_id = i.item_category_id
+			JOIN users u ON u.user_id = i.item_owner_id
+			LEFT JOIN item_swap_details sd ON sd.swap_item_id = i.item_id
+			LEFT JOIN categories dc ON dc.category_id = sd.desired_category_id
+			WHERE i.item_owner_id = $1
+			ORDER BY i.item_created_at DESC, i.item_id DESC`,
+			[userId]
+		);
+
+		const items = rows.map((row) => ({
+			id: Number(row.item_id),
+			title: row.item_title,
+			description: row.item_description,
+			type: row.item_type,
+			status: row.item_status,
+			defects: row.item_defects,
+			category: {
+				id: Number(row.category_id),
+				name: row.category_name,
+			},
+			image_url: row.image_url,
+			images: row.images.map((image) => ({
+				id: Number(image.id),
+				url: image.url,
+				position: image.position,
+			})),
+			owner: {
+				id: Number(row.item_owner_id),
+				name: row.owner_name,
+			},
+			swap_details: row.item_type === 'swap' ? {
+				desired_category: row.desired_category_id == null ? null : {
+					id: Number(row.desired_category_id),
+					name: row.desired_category_name,
+				},
+				desired_description: row.desired_description,
+			} : null,
+			created_at: row.item_created_at,
+			requests_count: Number(row.requests_count),
+		}));
+
+		return res.status(200).json({ items });
+	} catch (error) {
+		console.error('Failed to load profile items:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+});

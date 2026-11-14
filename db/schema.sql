@@ -1,5 +1,5 @@
 -- Run while connected to the "korna" database.
--- Run only for a fresh database; use migrate_session_auth.sql for an existing one.
+-- Run only for a fresh database, then run seed_categories.sql.
 BEGIN;
 
 CREATE TABLE users (
@@ -39,13 +39,22 @@ CREATE TABLE items (
     item_description TEXT,
     item_type VARCHAR(10) NOT NULL,
     item_defects TEXT,
-    item_image_url TEXT,
     -- The API sets pending when the first request arrives, and completed on approval.
     item_status VARCHAR(10) NOT NULL DEFAULT 'available',
     item_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT items_title_not_blank CHECK (LENGTH(TRIM(item_title)) > 0),
     CONSTRAINT items_type_valid CHECK (item_type IN ('free', 'swap')),
     CONSTRAINT items_status_valid CHECK (item_status IN ('available', 'pending', 'completed', 'removed'))
+);
+
+CREATE TABLE item_images (
+    image_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    image_item_id BIGINT NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    CONSTRAINT item_images_url_not_blank CHECK (LENGTH(TRIM(image_url)) > 0),
+    CONSTRAINT item_images_position_nonnegative CHECK (position >= 0),
+    CONSTRAINT item_images_item_position_unique UNIQUE (image_item_id, position)
 );
 
 CREATE TABLE item_swap_details (
@@ -70,8 +79,33 @@ CREATE TABLE request_swap_offers (
     offer_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     offer_request_id BIGINT NOT NULL UNIQUE REFERENCES requests(request_id) ON DELETE CASCADE,
     offer_description TEXT NOT NULL,
-    offer_image_url TEXT,
     CONSTRAINT offers_description_not_blank CHECK (LENGTH(TRIM(offer_description)) > 0)
+);
+
+CREATE TABLE request_swap_offer_images (
+    image_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    image_offer_id BIGINT NOT NULL REFERENCES request_swap_offers(offer_id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    CONSTRAINT offer_images_url_not_blank CHECK (LENGTH(TRIM(image_url)) > 0),
+    CONSTRAINT offer_images_position_nonnegative CHECK (position >= 0),
+    CONSTRAINT offer_images_offer_position_unique UNIQUE (image_offer_id, position)
+);
+
+CREATE TABLE notifications (
+    notification_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    recipient_user_id BIGINT NOT NULL REFERENCES users(user_id),
+    actor_user_id BIGINT NOT NULL REFERENCES users(user_id),
+    notification_item_id BIGINT NOT NULL REFERENCES items(item_id),
+    notification_request_id BIGINT NOT NULL REFERENCES requests(request_id),
+    notification_type VARCHAR(20) NOT NULL,
+    notification_decision VARCHAR(10),
+    read_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT notifications_type_decision_valid CHECK (
+        (notification_type = 'request_received' AND notification_decision IS NULL) OR
+        (notification_type = 'request_decided' AND notification_decision IS NOT NULL AND notification_decision IN ('accepted', 'rejected'))
+    )
 );
 
 -- A post can have only one accepted request, even if two approvals race.
@@ -85,5 +119,9 @@ CREATE INDEX items_category_idx ON items (item_category_id);
 CREATE INDEX items_owner_idx ON items (item_owner_id);
 CREATE INDEX requests_item_status_idx ON requests (request_item_id, request_status);
 CREATE INDEX requests_requester_idx ON requests (requester_user_id);
+CREATE INDEX notifications_recipient_created_idx
+    ON notifications (recipient_user_id, created_at DESC, notification_id DESC);
+CREATE INDEX notifications_unread_idx
+    ON notifications (recipient_user_id) WHERE read_at IS NULL;
 
 COMMIT;

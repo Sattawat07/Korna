@@ -2,9 +2,7 @@
 
 ใช้ Node.js 22 ขึ้นไปและ PostgreSQL บนเครื่องเดียวกัน คัดลอก `.env.example` เป็น `.env` แล้วกำหนด `PGPASSWORD` และ `SESSION_SECRET` ที่สุ่มยาวอย่างน้อย 32 ไบต์ เก็บ `.env` ไว้เฉพาะเครื่อง ไม่ส่งขึ้น Git
 
-ฐานข้อมูลใหม่: สร้างฐานข้อมูลด้วย `db/create_database.sql` แล้วรัน `db/schema.sql` และ `db/seed_categories.sql` ในฐานข้อมูล `korna`
-
-ฐานข้อมูลเดิมที่ใช้ `user_password`: สำรองฐานข้อมูลก่อน แล้วรัน `db/migrate_session_auth.sql` เพียงครั้งเดียว Migration จะหยุดถ้ามีผู้ใช้เดิม เพราะต้องแปลงรหัสผ่านเหล่านั้นเป็น Argon2id ก่อน ห้ามลบข้อมูลผู้ใช้เพื่อให้ migration ผ่าน
+ฐานข้อมูลใหม่: สร้างฐานข้อมูลด้วย `db/create_database.sql` แล้วรัน `db/schema.sql` และ `db/seed_categories.sql` ในฐานข้อมูล `korna` ตามลำดับ ไฟล์ `schema.sql` ใช้สร้างฐานใหม่เท่านั้น ถ้ามีฐานเดิมต้องลบและสร้างใหม่ก่อน ข้อมูลเดิมจะหายไป
 
 รัน `npm ci` และ `npm start` จากรากโปรเจกต์ ตรวจ `GET /api/health`, `GET /api/health/db` และ `GET /api/categories` หน้าเว็บให้เพื่อนวางในโฟลเดอร์ `frontend/` ที่รากโปรเจกต์ Node จะเสิร์ฟไฟล์เหล่านี้ร่วม origin กับ API
 
