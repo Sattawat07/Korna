@@ -8,6 +8,7 @@ import { createSessionStore } from './session-store.js';
 import { categoriesRouter } from './routes/categories.js';
 import { authRouter } from './routes/auth.js';
 import { meRouter } from './routes/me.js';
+import { requestsRouter } from './routes/requests.js';
 
 await mkdir(config.uploadDir, { recursive: true });
 
@@ -32,6 +33,7 @@ app.use('/uploads', express.static(config.uploadDir, { index: false, dotfiles: '
 app.use('/api/categories', categoriesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/me', meRouter);
+app.use('/api/requests', requestsRouter);
 
 app.get('/api/health', (_request, response) => {
 	response.json({ status: 'ok' });
