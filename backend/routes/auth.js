@@ -9,7 +9,7 @@ import {
 	deletePasswordResetChallenge,
 	RESET_CHALLENGE_TTL_MS,
 } from '../password-reset-challenges.js';
-import { createPasswordResetToken, RESET_TOKEN_TTL_MS } from '../password-reset-tokens.js';
+import { createPasswordResetToken, consumePasswordResetToken, RESET_TOKEN_TTL_MS } from '../password-reset-tokens.js';
 import { REMEMBERED_SESSION_MAX_AGE_MS } from '../session-store.js';
 import { checkPasswordResetRateLimit } from '../password-reset-rate-limit.js';
 import { checkSignupRateLimit } from '../signup-rate-limit.js';
@@ -652,6 +652,98 @@ authRouter.post('/forgot-password/verify', async (req, res) => {
 		sameSite: 'lax',
 		secure: config.secureCookie,
 		maxAge: RESET_TOKEN_TTL_MS,
+	});
+	return res.status(204).end();
+});
+
+
+authRouter.post('/forgot-password/reset', async (req, res) => {
+	const new_password = req.body?.new_password;
+	const details = {};
+
+	if (typeof new_password !== 'string' || new_password.length < 8)
+		details.new_password = 'Password must be at least 8 characters';
+
+
+	if (Object.keys(details).length > 0) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details,
+			},
+		});
+	}
+
+	const tokenId = req.cookies?.reset_token;
+	const tokenResult = consumePasswordResetToken(tokenId);
+
+	if (tokenResult.status === 'expired') {
+		return res.status(410).json({
+			error: {
+				code: 'RESET_EXPIRED',
+				message: 'Password reset link has expired. Please request a new code.',
+			},
+		});
+	}
+
+	const userId = tokenResult.userId;
+	let client;
+
+	try {
+		const { passwordHash, passwordSalt } = await hashPassword(new_password);
+		client = await pool.connect();
+		await client.query('BEGIN');
+
+		const { rows } = await client.query(
+			`UPDATE users
+		SET password_hash = $1,
+			password_salt = $2
+		WHERE user_id = $3
+		RETURNING user_id`,
+			[passwordHash, passwordSalt, userId]
+		);
+
+		if (rows.length === 0) {
+			await client.query('ROLLBACK');
+			return res.status(410).json({
+				error: {
+					code: 'RESET_EXPIRED',
+					message: 'Password reset is no longer available.',
+				},
+			});
+		}
+
+		await client.query(
+			`DELETE FROM sessions
+		WHERE sess->>'userId' = $1`,
+			[String(userId)]
+		);
+
+		await client.query('COMMIT');
+	} catch (error) {
+		if (client) {
+			try {
+				await client.query('ROLLBACK');
+			} catch (rollbackError) {
+				console.error('Failed to roll back password reset:', rollbackError);
+			}
+		}
+		console.error('Failed to reset password:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	} finally {
+		client?.release();
+	}
+
+	res.clearCookie('reset_token', {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
 	});
 	return res.status(204).end();
 });
