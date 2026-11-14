@@ -5,9 +5,11 @@ import { sendPasswordResetOtp, sendSignupOtp } from '../mail.js';
 import { hashPassword, verifyPassword } from '../password.js';
 import {
 	createPasswordResetChallenge,
+	verifyPasswordResetOtp,
 	deletePasswordResetChallenge,
 	RESET_CHALLENGE_TTL_MS,
 } from '../password-reset-challenges.js';
+import { createPasswordResetToken, RESET_TOKEN_TTL_MS } from '../password-reset-tokens.js';
 import { REMEMBERED_SESSION_MAX_AGE_MS } from '../session-store.js';
 import { checkPasswordResetRateLimit } from '../password-reset-rate-limit.js';
 import { checkSignupRateLimit } from '../signup-rate-limit.js';
@@ -593,4 +595,63 @@ authRouter.post('/forgot-password/request', async (req, res) => {
 	return res.status(202).json({
 		message: 'If this account exists, a verification code has been sent.',
 	});
+});
+
+authRouter.post('/forgot-password/verify', async (req, res) => {
+	const challengeId = req.cookies?.reset_challenge;
+	const otp = req.body?.otp;
+
+	const verificationResult = verifyPasswordResetOtp(challengeId, otp);
+	if (verificationResult.status === 'expired') {
+		return res.status(410).json({
+			error: {
+				code: 'OTP_EXPIRED',
+				message: 'Verification code has expired. Please request a new password reset code.',
+			},
+		});
+	}
+
+	if (verificationResult.status === 'invalid') {
+		return res.status(400).json({
+			error: {
+				code: 'INVALID_OTP',
+				message: 'Invalid verification code.',
+			},
+		});
+	}
+
+	if (verificationResult.status === 'too_many_attempts') {
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Too many incorrect verification attempts.',
+			},
+		});
+	}
+
+	let resetToken;
+	try {
+		resetToken = createPasswordResetToken(verificationResult.userId);
+	} catch (error) {
+		console.error('Failed to create password reset token:', error);
+		return res.status(500).json({
+			error: {
+				code: 'INTERNAL_ERROR',
+				message: 'Unable to verify the code right now. Please request a new password reset code.',
+			},
+		});
+	}
+
+	res.clearCookie('reset_challenge', {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+	});
+	res.cookie('reset_token', resetToken.tokenId, {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+		maxAge: RESET_TOKEN_TTL_MS,
+	});
+	return res.status(204).end();
 });
