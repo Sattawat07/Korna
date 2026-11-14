@@ -19,3 +19,12 @@ export async function sendSignupOtp(email, otp) {
 		text: `รหัสยืนยันของคุณคือ ${otp}\nรหัสนี้มีอายุ 5 นาที`,
 	});
 }
+
+export async function sendPasswordResetOtp(email, otp) {
+	await transporter.sendMail({
+		from: config.smtp.from,
+		to: email,
+		subject: 'รหัสยืนยันการตั้งรหัสผ่านใหม่ Korna',
+		text: `รหัสยืนยันการตั้งรหัสผ่านใหม่ของคุณคือ ${otp}\nรหัสนี้มีอายุ 5 นาที\nหากคุณไม่ได้ขอเปลี่ยนรหัสผ่าน สามารถละเว้นอีเมลนี้ได้`,
+	});
+}

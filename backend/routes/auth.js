@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { config } from '../config.js';
 import { pool } from '../db.js';
-import { sendSignupOtp } from '../mail.js';
+import { sendPasswordResetOtp, sendSignupOtp } from '../mail.js';
 import { hashPassword, verifyPassword } from '../password.js';
+import {
+	createPasswordResetChallenge,
+	verifyPasswordResetOtp,
+	deletePasswordResetChallenge,
+	RESET_CHALLENGE_TTL_MS,
+} from '../password-reset-challenges.js';
+import { createPasswordResetToken, consumePasswordResetToken, RESET_TOKEN_TTL_MS } from '../password-reset-tokens.js';
+import { REMEMBERED_SESSION_MAX_AGE_MS } from '../session-store.js';
+import { checkPasswordResetRateLimit } from '../password-reset-rate-limit.js';
 import { checkSignupRateLimit } from '../signup-rate-limit.js';
 import {
 	createSignupChallenge,
@@ -346,7 +355,7 @@ authRouter.post('/register/resend', async (req, res) => {
 });
 
 authRouter.post("/login", async (req, res) => {
-	const { email, password } = req.body ?? {};
+	const { email, password, remember_me } = req.body ?? {};
 	const details = {};
 
 	const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -355,6 +364,9 @@ authRouter.post("/login", async (req, res) => {
 
 	if (typeof password !== 'string' || password.length < 8)
 		details.password = 'Password must be at least 8 characters';
+
+	if (remember_me !== undefined && typeof remember_me !== 'boolean')
+		details.remember_me = 'Remember me must be true or false';
 
 	if (Object.keys(details).length > 0) {
 		return res.status(400).json({
@@ -433,6 +445,7 @@ authRouter.post("/login", async (req, res) => {
 		}
 
 		req.session.userId = user.id;
+		req.session.cookie.maxAge = remember_me === true ? REMEMBERED_SESSION_MAX_AGE_MS : null;
 
 		return req.session.save((error) => {
 			if (error) {
@@ -489,4 +502,248 @@ authRouter.post('/logout', (req, res) => {
 		});
 		return res.status(204).end();
 	});
+});
+
+authRouter.post('/forgot-password/request', async (req, res) => {
+	const email = req.body?.email;
+	const details = {};
+
+	const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+	if (!normalizedEmail || normalizedEmail.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
+		details.email = 'Enter a valid email address of at most 255 characters';
+
+	if (Object.keys(details).length > 0) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details,
+			},
+		});
+	}
+
+	const rateLimit = checkPasswordResetRateLimit(normalizedEmail, req.ip ?? req.socket.remoteAddress ?? 'unknown');
+	if (!rateLimit.allowed) {
+		res.set('Retry-After', String(rateLimit.retryAfterSeconds));
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Please wait before requesting another password reset code.',
+			},
+		});
+	}
+
+	let resetUserId = null;
+	try {
+		const { rows } = await pool.query(`
+			SELECT user_id AS id
+			FROM users
+			WHERE user_email = $1
+			LIMIT 1;`,
+			[normalizedEmail]
+		);
+		resetUserId = rows[0]?.id ?? null;
+	} catch (error) {
+		console.error('Failed to look up password reset account:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+
+	let resetChallenge;
+	try {
+		resetChallenge = createPasswordResetChallenge(resetUserId);
+	} catch (error) {
+		console.error('Failed to prepare password reset challenge:', error);
+		return res.status(500).json({
+			error: {
+				code: 'INTERNAL_ERROR',
+				message: 'Unable to request a password reset right now.',
+			},
+		});
+	}
+
+	if (resetUserId != null) {
+		try {
+			await sendPasswordResetOtp(normalizedEmail, resetChallenge.otp);
+		} catch (error) {
+			console.error('Failed to send password reset email:', error);
+			deletePasswordResetChallenge(resetChallenge.challengeId);
+			try {
+				resetChallenge = createPasswordResetChallenge(null);
+			} catch (challengeError) {
+				console.error('Failed to prepare fallback password reset challenge:', challengeError);
+				return res.status(500).json({
+					error: {
+						code: 'INTERNAL_ERROR',
+						message: 'Unable to request a password reset right now.',
+					},
+				});
+			}
+		}
+	}
+
+	res.cookie('reset_challenge', resetChallenge.challengeId, {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+		maxAge: RESET_CHALLENGE_TTL_MS,
+	});
+	return res.status(202).json({
+		message: 'If this account exists, a verification code has been sent.',
+	});
+});
+
+authRouter.post('/forgot-password/verify', async (req, res) => {
+	const challengeId = req.cookies?.reset_challenge;
+	const otp = req.body?.otp;
+
+	const verificationResult = verifyPasswordResetOtp(challengeId, otp);
+	if (verificationResult.status === 'expired') {
+		return res.status(410).json({
+			error: {
+				code: 'OTP_EXPIRED',
+				message: 'Verification code has expired. Please request a new password reset code.',
+			},
+		});
+	}
+
+	if (verificationResult.status === 'invalid') {
+		return res.status(400).json({
+			error: {
+				code: 'INVALID_OTP',
+				message: 'Invalid verification code.',
+			},
+		});
+	}
+
+	if (verificationResult.status === 'too_many_attempts') {
+		return res.status(429).json({
+			error: {
+				code: 'TOO_MANY_ATTEMPTS',
+				message: 'Too many incorrect verification attempts.',
+			},
+		});
+	}
+
+	let resetToken;
+	try {
+		resetToken = createPasswordResetToken(verificationResult.userId);
+	} catch (error) {
+		console.error('Failed to create password reset token:', error);
+		return res.status(500).json({
+			error: {
+				code: 'INTERNAL_ERROR',
+				message: 'Unable to verify the code right now. Please request a new password reset code.',
+			},
+		});
+	}
+
+	res.clearCookie('reset_challenge', {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+	});
+	res.cookie('reset_token', resetToken.tokenId, {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+		maxAge: RESET_TOKEN_TTL_MS,
+	});
+	return res.status(204).end();
+});
+
+
+authRouter.post('/forgot-password/reset', async (req, res) => {
+	const new_password = req.body?.new_password;
+	const details = {};
+
+	if (typeof new_password !== 'string' || new_password.length < 8)
+		details.new_password = 'Password must be at least 8 characters';
+
+
+	if (Object.keys(details).length > 0) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details,
+			},
+		});
+	}
+
+	const tokenId = req.cookies?.reset_token;
+	const tokenResult = consumePasswordResetToken(tokenId);
+
+	if (tokenResult.status === 'expired') {
+		return res.status(410).json({
+			error: {
+				code: 'RESET_EXPIRED',
+				message: 'Password reset link has expired. Please request a new code.',
+			},
+		});
+	}
+
+	const userId = tokenResult.userId;
+	let client;
+
+	try {
+		const { passwordHash, passwordSalt } = await hashPassword(new_password);
+		client = await pool.connect();
+		await client.query('BEGIN');
+
+		const { rows } = await client.query(
+			`UPDATE users
+		SET password_hash = $1,
+			password_salt = $2
+		WHERE user_id = $3
+		RETURNING user_id`,
+			[passwordHash, passwordSalt, userId]
+		);
+
+		if (rows.length === 0) {
+			await client.query('ROLLBACK');
+			return res.status(410).json({
+				error: {
+					code: 'RESET_EXPIRED',
+					message: 'Password reset is no longer available.',
+				},
+			});
+		}
+
+		await client.query(
+			`DELETE FROM sessions
+		WHERE sess->>'userId' = $1`,
+			[String(userId)]
+		);
+
+		await client.query('COMMIT');
+	} catch (error) {
+		if (client) {
+			try {
+				await client.query('ROLLBACK');
+			} catch (rollbackError) {
+				console.error('Failed to roll back password reset:', rollbackError);
+			}
+		}
+		console.error('Failed to reset password:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	} finally {
+		client?.release();
+	}
+
+	res.clearCookie('reset_token', {
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: config.secureCookie,
+	});
+	return res.status(204).end();
 });

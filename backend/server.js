@@ -2,9 +2,9 @@ import { mkdir } from 'node:fs/promises';
 import express from 'express';
 import session from 'express-session';
 import cookieParser from "cookie-parser";
-import connectPgSimple from 'connect-pg-simple';
 import { config } from './config.js';
 import { pool } from './db.js';
+import { createSessionStore } from './session-store.js';
 import { categoriesRouter } from './routes/categories.js';
 import { authRouter } from './routes/auth.js';
 
@@ -13,18 +13,16 @@ await mkdir(config.uploadDir, { recursive: true });
 const app = express();
 app.disable('x-powered-by');
 if (config.trustProxy) app.set('trust proxy', 1);
-const PgSessionStore = connectPgSimple(session);
 app.use(session({
 	name: 'sid',
 	secret: config.sessionSecret,
-	store: new PgSessionStore({ pool, tableName: 'sessions' }),
+	store: createSessionStore(pool),
 	resave: false,
 	saveUninitialized: false,
 	cookie: {
 		httpOnly: true,
 		sameSite: 'lax',
 		secure: config.secureCookie,
-		maxAge: 8 * 60 * 60 * 1000,
 	},
 }));
 app.use(express.json({ limit: '1mb' }));
