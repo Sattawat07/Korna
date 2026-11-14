@@ -49,6 +49,13 @@ test('GET /api/requests lists sent and received requests with ownership checks',
 	});
 	assert.deepEqual(queries[0].values, [7]);
 	assert.match(queries[0].sql, /r\.requester_user_id = \$1/);
+	itemOwnerId = '8';
+	const sentFiltered = await fetch(`${url}?role=sent&item_id=12`);
+	assert.equal(sentFiltered.status, 200);
+	assert.equal((await sentFiltered.json()).requests[0].id, 31);
+	assert.deepEqual(queries[1].values, [7, 12]);
+	assert.match(queries[1].sql, /r\.requester_user_id = \$1 AND i\.item_id = \$2/);
+	itemOwnerId = '7';
 
 	requestRows = [{
 		request_id: '32', request_message: null, request_status: 'accepted',
@@ -76,7 +83,7 @@ test('GET /api/requests lists sent and received requests with ownership checks',
 	assert.equal(missingItem.status, 404);
 	assert.equal((await missingItem.json()).error.code, 'NOT_FOUND');
 
-	for (const query of ['?role=other', '?role=received&item_id=0', '?role=sent&item_id=12']) {
+	for (const query of ['?role=other', '?role=received&item_id=0', '?role=sent&item_id=0']) {
 		const invalid = await fetch(url + query);
 		assert.equal(invalid.status, 400);
 		assert.equal((await invalid.json()).error.code, 'VALIDATION_ERROR');

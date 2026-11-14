@@ -13,8 +13,8 @@ requestsRouter.get('/', requireAuth, async (req, res) => {
 
 	let itemId = null;
 	if (item_id !== undefined) {
-		if (role !== 'received' || typeof item_id !== 'string' || !/^[1-9]\d*$/.test(item_id) || !Number.isSafeInteger(Number(item_id)))
-			details.item_id = 'Enter a valid item ID for received requests';
+		if (typeof item_id !== 'string' || !/^[1-9]\d*$/.test(item_id) || !Number.isSafeInteger(Number(item_id)))
+			details.item_id = 'Enter a valid item ID';
 		else
 			itemId = Number(item_id);
 	}
@@ -30,7 +30,7 @@ requestsRouter.get('/', requireAuth, async (req, res) => {
 	}
 
 	try {
-		if (itemId !== null) {
+		if (role === 'received' && itemId !== null) {
 			const { rows } = await pool.query(
 				'SELECT item_owner_id FROM items WHERE item_id = $1',
 				[itemId]

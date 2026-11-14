@@ -340,7 +340,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### GET /api/requests?role=sent|received
 
-`role` จำเป็นและเป็น `sent` หรือ `received` ตอบ `200 {"requests": [ ... ]}` โดยใช้รูปแบบ `request` ข้างบน เรียงใหม่ไปเก่า `sent` คือคำขอที่ตัวเองส่ง `received` คือคำขอของโพสต์ที่ตัวเองเป็นเจ้าของ ถ้า `role=received` ส่ง `item_id` เพื่อดูเฉพาะคนที่ส่งคำขอให้โพสต์ของตน เช่น `GET /api/requests?role=received&item_id=12`; ถ้าไม่ใช่เจ้าของโพสต์ตอบ `403 FORBIDDEN`
+`role` จำเป็นและเป็น `sent` หรือ `received` ตอบ `200 {"requests": [ ... ]}` โดยใช้รูปแบบ `request` ข้างบน เรียงใหม่ไปเก่า `sent` คือคำขอที่ตัวเองส่ง `received` คือคำขอของโพสต์ที่ตัวเองเป็นเจ้าของ ส่ง `item_id` เพื่อกรองคำขอของโพสต์หนึ่งรายการได้ทั้งสอง role เช่น `GET /api/requests?role=sent&item_id=12` หรือ `GET /api/requests?role=received&item_id=12`; กรณี `received` ถ้าไม่ใช่เจ้าของโพสต์ตอบ `403 FORBIDDEN`
 
 ### PATCH /api/requests/:id/decision
 
