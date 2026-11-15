@@ -3,12 +3,7 @@
 // รูปการตอบกลับตาม docs/api.md:
 //   Error: { "error": { "code": "...", "message": "...", "details": {...} } }
 
-const API_BASE_URL = 'http://127.0.0.1:3000/api';
-
-function getAuthHeader() {
-  const token = localStorage.getItem('korna_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+const API_BASE_URL = '/api';
 
 export async function request(path, { method = 'GET', body = null, headers = {} } = {}) {
   const config = {
@@ -16,7 +11,6 @@ export async function request(path, { method = 'GET', body = null, headers = {} 
     credentials: 'include', // รองรับ Session Cookie (HttpOnly) ตาม api.md ล่าสุด
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeader(),
       ...headers,
     },
   };
