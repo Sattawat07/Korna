@@ -340,7 +340,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### GET /api/requests?role=sent|received
 
-`role` จำเป็นและเป็น `sent` หรือ `received` ตอบ `200 {"requests": [ ... ]}` โดยใช้รูปแบบ `request` ข้างบน เรียงใหม่ไปเก่า `sent` คือคำขอที่ตัวเองส่ง `received` คือคำขอของโพสต์ที่ตัวเองเป็นเจ้าของ ถ้า `role=received` ส่ง `item_id` เพื่อดูเฉพาะคนที่ส่งคำขอให้โพสต์ของตน เช่น `GET /api/requests?role=received&item_id=12`; ถ้าไม่ใช่เจ้าของโพสต์ตอบ `403 FORBIDDEN`
+`role` จำเป็นและเป็น `sent` หรือ `received` ตอบ `200 {"requests": [ ... ]}` โดยใช้รูปแบบ `request` ข้างบน เรียงใหม่ไปเก่า `sent` คือคำขอที่ตัวเองส่ง `received` คือคำขอของโพสต์ที่ตัวเองเป็นเจ้าของ ส่ง `item_id` เพื่อกรองคำขอของโพสต์หนึ่งรายการได้ทั้งสอง role เช่น `GET /api/requests?role=sent&item_id=12` หรือ `GET /api/requests?role=received&item_id=12`; กรณี `received` ถ้าไม่ใช่เจ้าของโพสต์ตอบ `403 FORBIDDEN`
 
 ### PATCH /api/requests/:id/decision
 
@@ -374,7 +374,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### PATCH /api/notifications/:id/read
 
-ทำเครื่องหมายว่าอ่านแล้ว ตอบ `200 {"notification":{ ... }}` การแจ้งเตือนของผู้อื่นหรือ ID ที่ไม่มีตอบ `404 NOT_FOUND`
+ทำเครื่องหมายว่าอ่านแล้ว ตอบ `200 {"notification":{"id":41,"type":"request_received","item_id":12,"request_id":31,"read_at":"2026-10-18T12:00:00.000Z","created_at":"2026-10-18T11:00:00.000Z"}}` ถ้าเป็น `request_decided` จะมี `decision` เพิ่ม ไม่ส่ง `actor` ใน response นี้ หากอ่านแล้วให้คง `read_at` เดิม การแจ้งเตือนของผู้อื่นหรือ ID ที่ไม่มีตอบ `404 NOT_FOUND`
 
 ## ผู้ดูแลระบบ
 
