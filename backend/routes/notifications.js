@@ -99,3 +99,66 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
 		});
 	}
 });
+
+notificationsRouter.patch('/:id/read', requireAuth, async (req, res) => {
+	const idParam = req.params.id;
+	const notificationId = Number(idParam);
+
+	if (!/^[1-9]\d*$/.test(idParam) || !Number.isSafeInteger(notificationId)) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details: { id: 'Enter a valid notification ID' },
+			},
+		});
+	}
+
+	try {
+		const { rows } = await pool.query(`
+			UPDATE notifications
+			SET read_at = COALESCE(read_at, NOW())
+			WHERE notification_id = $1 AND recipient_user_id = $2
+			RETURNING
+				notification_id,
+				notification_type,
+				notification_item_id,
+				notification_request_id,
+				notification_decision,
+				read_at,
+				created_at`,
+			[notificationId, req.user.id]
+		);
+
+		if (rows.length === 0) {
+			return res.status(404).json({
+				error: {
+					code: 'NOT_FOUND',
+					message: 'Notification not found.',
+				},
+			});
+		}
+
+		const row = rows[0];
+		const notification = {
+			id: Number(row.notification_id),
+			type: row.notification_type,
+			item_id: Number(row.notification_item_id),
+			request_id: Number(row.notification_request_id),
+			read_at: row.read_at,
+			created_at: row.created_at,
+		};
+		if (row.notification_type === 'request_decided')
+			notification.decision = row.notification_decision;
+
+		return res.status(200).json({ notification });
+	} catch (error) {
+		console.error('Failed to mark notification as read:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+});

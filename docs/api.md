@@ -374,7 +374,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### PATCH /api/notifications/:id/read
 
-ทำเครื่องหมายว่าอ่านแล้ว ตอบ `200 {"notification":{ ... }}` การแจ้งเตือนของผู้อื่นหรือ ID ที่ไม่มีตอบ `404 NOT_FOUND`
+ทำเครื่องหมายว่าอ่านแล้ว ตอบ `200 {"notification":{"id":41,"type":"request_received","item_id":12,"request_id":31,"read_at":"2026-10-18T12:00:00.000Z","created_at":"2026-10-18T11:00:00.000Z"}}` ถ้าเป็น `request_decided` จะมี `decision` เพิ่ม ไม่ส่ง `actor` ใน response นี้ หากอ่านแล้วให้คง `read_at` เดิม การแจ้งเตือนของผู้อื่นหรือ ID ที่ไม่มีตอบ `404 NOT_FOUND`
 
 ## ผู้ดูแลระบบ
 
