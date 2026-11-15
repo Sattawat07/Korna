@@ -1,7 +1,6 @@
 // Signup page logic — Vanilla JS
-// เชื่อมกับ auth.js (mock) ก่อน ต่อไปเปลี่ยนเป็น api.request() ได้ทันที
-
-import { mockRegister, setToken } from '../auth.js';
+import { request } from '../api.js';
+import { setupOtpInputs, startCountdown } from '../shared/modal.js';
 
 const form = document.querySelector('form');
 const nameInput = document.querySelector('#name');
@@ -32,7 +31,6 @@ const eyeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" widt
 const hideSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="#5E4636"><path d="M16.1,13.3l-1.45-1.45q0.22-1.18-0.67-2.2q-0.9-1.02-2.33-0.8L10.2,7.4q0.42-0.2 0.86-0.3T12,7q1.88,0 3.19,1.31T16.5,11.5q0,0.5-0.1,0.94T16.1,13.3Zm3.2,3.15l-1.45-1.4q0.95-0.72 1.69-1.59T20.8,11.5q-1.25-2.53-3.59-4.01T12,6q-0.72,0-1.42,0.1T9.2,6.4L7.65,4.85q1.03-0.43 2.1-0.64T12,4q3.78,0 6.73,2.09T23,11.5q-0.57,1.47-1.51,2.74T19.3,16.45Zm0.5,6.15l-4.2-4.15q-0.88,0.28-1.76,0.41T12,19q-3.78,0-6.73-2.09T1,11.5q0.53-1.33 1.33-2.46T4.15,7L1.4,4.2L2.8,2.8L21.2,21.2l-1.4,1.4ZM5.55,8.4Q4.83,9.05 4.23,9.82T3.2,11.5q1.25,2.52 3.59,4.01T12,17q0.5,0 0.98-0.06t0.97-0.14l-0.9-0.95q-0.28,0.07-0.53,0.11T12,16q-1.88,0-3.19-1.31T7.5,11.5q0-0.28 0.04-0.53t0.11-0.53L5.55,8.4Zm7.98,2.33ZM9.75,12.6Z"/></svg>`;
 
 toggleBtns.forEach(toggleBtn => {
-  // หา input ที่อยู่ใน form-group เดียวกันกับปุ่มนี้
   const formGroup = toggleBtn.closest('.form-group');
   const passwordInput = formGroup.querySelector('input[type="password"], input[type="text"]');
 
@@ -52,76 +50,168 @@ toggleBtns.forEach(toggleBtn => {
   });
 });
 
-// ---------- Form submission ----------
+// ==========================================
+// Sign up OTP Modal elements & logic
+// ==========================================
+const otpModal = document.getElementById('signup-otp-modal');
+const modalCloseBtn = document.getElementById('signup-modal-close');
+const otpForm = document.getElementById('signup-otp-form');
+const otpContainer = document.getElementById('signup-otp-inputs');
+const targetEmailSpan = document.getElementById('signup-target-email');
+const timerSpan = document.getElementById('signup-timer');
+const resendBtn = document.getElementById('signup-resend-btn');
+const otpError = document.getElementById('signup-otp-error');
+
+let stopTimerFn = null;
+let pendingUserData = null;
+
+const otpHandler = setupOtpInputs(otpContainer);
+
+function openOtpModal(email) {
+  otpModal.classList.add('active');
+  targetEmailSpan.textContent = email;
+  otpHandler.focusFirst();
+  startOtpCountdown();
+}
+
+function closeOtpModal() {
+  otpModal.classList.remove('active');
+  if (stopTimerFn) stopTimerFn();
+  otpError.textContent = '';
+  otpHandler.clear();
+}
+
+function startOtpCountdown() {
+  resendBtn.disabled = true;
+  if (stopTimerFn) stopTimerFn();
+  stopTimerFn = startCountdown(timerSpan, 300, () => {
+    resendBtn.disabled = false;
+  });
+}
+
+modalCloseBtn?.addEventListener('click', closeOtpModal);
+otpModal?.addEventListener('click', (e) => {
+  if (e.target === otpModal) closeOtpModal();
+});
+
+// Resend OTP
+resendBtn.addEventListener('click', async () => {
+  resendBtn.disabled = true;
+  otpError.textContent = '';
+  try {
+    await request('/auth/register/resend', { method: 'POST' });
+    otpHandler.clear();
+    startOtpCountdown();
+  } catch (err) {
+    otpError.textContent = 'Failed to resend code.';
+    resendBtn.disabled = false;
+  }
+});
+
+// Verify OTP & Create Account
+otpForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  otpError.textContent = '';
+  const otp = otpHandler.getValue();
+
+  if (otp.length < 6) {
+    otpError.textContent = 'Please enter all 6 digits.';
+    return;
+  }
+
+  const btn = otpForm.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+
+  try {
+    await request('/auth/register/verify', {
+      method: 'POST',
+      body: { otp },
+    });
+    closeOtpModal();
+    alert('Account created successfully! Welcome to KORNA. Please sign in.');
+    window.location.href = 'login.html';
+  } catch (err) {
+    otpError.textContent = err.message || 'Invalid or expired OTP code.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verify & Create account';
+  }
+});
+
+// ---------- Form submission (Step 1: Request OTP) ----------
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
 
   // Reset UI
   errorContainer.style.display = 'none';
   errorContainer.textContent = '';
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Creating account...';
 
-  const name = nameInput.value.trim();
+  const firstName = nameInput.value.trim();
+  const surname = surnameInput.value.trim();
   const email = emailInput.value.trim();
   const password = passwordInput.value;
   const confirmPassword = confirmPasswordInput.value;
   const roomNumber = roomInput.value.trim();
   const phoneNumber = phoneInput.value.trim();
 
+  // Client-side validation: รวมชื่อ-นามสกุล
+  const fullName = `${firstName} ${surname}`.trim();
+  if (!fullName) {
+    errorContainer.textContent = 'Please enter your name.';
+    errorContainer.style.display = 'block';
+    return;
+  }
+
   // Client-side validation: password match
   if (password !== confirmPassword) {
-    errorContainer.textContent = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
+    errorContainer.textContent = 'Passwords do not match.';
     errorContainer.style.display = 'block';
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Sign up';
     return;
   }
 
-  // Client-side validation: minimum password length (per API spec)
+  // Client-side validation: password length >= 8
   if (password.length < 8) {
-    errorContainer.textContent = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+    errorContainer.textContent = 'Password must be at least 8 characters long.';
     errorContainer.style.display = 'block';
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Sign up';
     return;
   }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending code...';
 
   try {
-    // Mock register (ต่อไปเปลี่ยนเป็น import { request } from '../assets/js/api.js'; แล้วเรียก request('/auth/register', { method: 'POST', body: {...} })
-    const result = await mockRegister({
-      name,
+    // เก็บข้อมูลเตรียมไว้
+    pendingUserData = {
+      name: fullName,
       email,
       password,
       room_number: roomNumber,
       phone_number: phoneNumber || undefined,
+    };
+
+    // ยิง POST /api/auth/register
+    await request('/auth/register', {
+      method: 'POST',
+      body: pendingUserData,
     });
 
-    // เก็บ token
-    setToken(result.token);
-
-    // คืนสถานะปุ่มก่อนแจ้งผล
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Sign up';
-
-    // แจ้งผลสำเร็จ
-    alert('สมัครสมาชิกสำเร็จ ยินดีต้อนรับ ' + result.user.name);
+    // สำเร็จ (HTTP 202) -> เปิด Modal กรอก OTP
+    openOtpModal(email);
   } catch (error) {
-    // แสดง error ตามสถานะที่ API คืนมา
     if (error.status === 409 && error.code === 'CONFLICT') {
-      errorContainer.textContent = 'อีเมลนี้มีผู้ใช้งานแล้ว';
+      errorContainer.textContent = 'An account with this email already exists.';
     } else {
-      errorContainer.textContent = 'ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง';
+      errorContainer.textContent = 'Unable to proceed with registration. Please try again.';
     }
     errorContainer.style.display = 'block';
-
-    // คืนสถานะปุ่ม
+  } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Sign up';
   }
 });
 
-// ---------- Reset button state when page is shown (e.g. back/forward navigation) ----------
+// ---------- Reset button state on pageshow ----------
 window.addEventListener('pageshow', () => {
   submitBtn.disabled = false;
   submitBtn.textContent = 'Sign up';

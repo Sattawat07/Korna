@@ -35,3 +35,4 @@ Desktop.ini
 
 # Local harness / tooling artifacts
 .harness/
+docs/missing_api.md

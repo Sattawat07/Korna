@@ -13,6 +13,7 @@ function getAuthHeader() {
 export async function request(path, { method = 'GET', body = null, headers = {} } = {}) {
   const config = {
     method,
+    credentials: 'include', // รองรับ Session Cookie (HttpOnly) ตาม api.md ล่าสุด
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeader(),

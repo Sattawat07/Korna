@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in - KORNA</title>
   <link rel="stylesheet" href="../assets/css/login.css">
+  <link rel="stylesheet" href="../assets/css/modal.css">
 </head>
 <body>
   <div class="logo-wrapper">
@@ -37,7 +38,7 @@
         <div class="form-actions">
           <input type="checkbox" id="remember" name="remember">
           <label for="remember">Remember me</label>
-          <a href="#">Forgot password?</a>
+          <button type="button" class="forgot-link-btn" id="forgot-btn">Forgot password?</button>
         </div>
 
         <button type="submit">Sign in</button>
@@ -49,6 +50,73 @@
 
   <footer>
   </footer>
+
+  <!-- Forgot Password Modal Flow -->
+  <div class="modal-backdrop" id="forgot-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close dialog">✕</button>
+      
+      <!-- Step 1: Input Email -->
+      <div class="modal-step" id="forgot-step-1">
+        <div class="modal-header">
+          <h3 id="modal-title">Forgot password?</h3>
+          <p>Enter your email address and we will send a 6-digit OTP code to reset your password.</p>
+        </div>
+        <form class="modal-form" id="forgot-email-form">
+          <div class="form-group">
+            <label for="forgot-email">Email address</label>
+            <input type="email" id="forgot-email" placeholder="you@mail.com" required>
+          </div>
+          <div class="modal-error" id="forgot-error-1"></div>
+          <button type="submit" class="modal-btn-submit">Send OTP</button>
+        </form>
+      </div>
+
+      <!-- Step 2: Verify OTP -->
+      <div class="modal-step" id="forgot-step-2" style="display: none;">
+        <div class="modal-header">
+          <h3>Verify OTP</h3>
+          <p>Please enter the 6-digit code sent to<br><span class="user-email-target" id="otp-target-email"></span></p>
+        </div>
+        <form class="modal-form" id="forgot-otp-form">
+          <div class="otp-inputs" id="forgot-otp-inputs">
+            <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+            <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+            <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+            <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+            <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+            <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          </div>
+          <div class="otp-timer">Expires in <span id="forgot-timer">05:00</span></div>
+          <div class="modal-error" id="forgot-error-2"></div>
+          <button type="submit" class="modal-btn-submit">Verify code</button>
+        </form>
+        <div class="modal-footer">
+          Didn't receive code? <button type="button" class="link-btn" id="forgot-resend-btn" disabled>Resend code</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Set New Password -->
+      <div class="modal-step" id="forgot-step-3" style="display: none;">
+        <div class="modal-header">
+          <h3>Reset password</h3>
+          <p>Create a new strong password for your account.</p>
+        </div>
+        <form class="modal-form" id="forgot-reset-form">
+          <div class="form-group">
+            <label for="new-password">New password</label>
+            <input type="password" id="new-password" placeholder="At least 8 characters" required minlength="8">
+          </div>
+          <div class="form-group">
+            <label for="confirm-password">Confirm new password</label>
+            <input type="password" id="confirm-password" placeholder="Re-enter password" required minlength="8">
+          </div>
+          <div class="modal-error" id="forgot-error-3"></div>
+          <button type="submit" class="modal-btn-submit">Change password</button>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="../assets/js/pages/login.js"></script>
 </body>

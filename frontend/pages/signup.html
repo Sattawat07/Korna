@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign up - KORNA</title>
   <link rel="stylesheet" href="../assets/css/signup.css">
+  <link rel="stylesheet" href="../assets/css/modal.css">
 </head>
 <body>
   <div class="logo-wrapper">
@@ -60,11 +61,6 @@
           </button>
         </div>
 
-        <div class="form-actions">
-          <input type="checkbox" id="remember" name="remember">
-          <label for="remember">Remember me</label>
-        </div>
-
         <button type="submit">Sign up</button>
       </form>
 
@@ -74,6 +70,36 @@
 
   <footer>
   </footer>
+
+  <!-- Sign up OTP Verification Modal -->
+  <div class="modal-backdrop" id="signup-otp-modal" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="signup-modal-close" aria-label="Close dialog">✕</button>
+      
+      <div class="modal-header">
+        <h3 id="signup-modal-title">Verify your email</h3>
+        <p>Please enter the 6-digit OTP code sent to<br><span class="user-email-target" id="signup-target-email"></span></p>
+      </div>
+
+      <form class="modal-form" id="signup-otp-form">
+        <div class="otp-inputs" id="signup-otp-inputs">
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+        </div>
+        <div class="otp-timer">Expires in <span id="signup-timer">05:00</span></div>
+        <div class="modal-error" id="signup-otp-error"></div>
+        <button type="submit" class="modal-btn-submit">Verify & Create account</button>
+      </form>
+
+      <div class="modal-footer">
+        Didn't receive code? <button type="button" class="link-btn" id="signup-resend-btn" disabled>Resend code</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="../assets/js/pages/signup.js"></script>
 </body>
