@@ -10,6 +10,7 @@ import { authRouter } from './routes/auth.js';
 import { meRouter } from './routes/me.js';
 import { requestsRouter } from './routes/requests.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { adminRouter } from './routes/admin.js';
 
 await mkdir(config.uploadDir, { recursive: true });
 
@@ -36,6 +37,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/me', meRouter);
 app.use('/api/requests', requestsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/admin', adminRouter);
 
 app.get('/api/health', (_request, response) => {
 	response.json({ status: 'ok' });
