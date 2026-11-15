@@ -1,0 +1,240 @@
+/* Modal & Popup Styles — Korna Frontend */
+/* Pure CSS, Semantic & Accessible */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(94, 70, 54, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  position: relative;
+  background-color: #FFF8E8;
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 440px;
+  padding: 32px 28px;
+  box-sizing: border-box;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.modal-backdrop.active .modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #8A6A4E;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.modal-close-btn:hover {
+  background-color: #F7F1E6;
+  color: #5E4636;
+}
+
+.modal-close-btn:focus-visible {
+  outline: 2px solid #5E4636;
+  outline-offset: 2px;
+}
+
+.modal-header h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #5E4636;
+}
+
+.modal-header p {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: #8A6A4E;
+  line-height: 1.5;
+}
+
+.modal-header .user-email-target {
+  font-weight: 600;
+  color: #5E4636;
+  display: block;
+  margin-top: 2px;
+}
+
+/* OTP 6 Digits Container */
+.otp-inputs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 20px 0 12px;
+}
+
+.otp-digit {
+  width: 44px;
+  height: 52px;
+  padding: 0 !important;
+  font-size: 22px !important;
+  font-weight: 700;
+  text-align: center;
+  border: 1.5px solid #E8D9B8;
+  border-radius: 8px;
+  background-color: #FFFDF8;
+  color: #5E4636;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.otp-digit:focus {
+  outline: none;
+  border-color: #5E4636;
+  box-shadow: 0 0 0 3px rgba(94, 70, 54, 0.15);
+}
+
+.otp-timer {
+  font-size: 12px;
+  color: #8A6A4E;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.otp-timer span {
+  font-weight: 600;
+  color: #5E4636;
+}
+
+/* Modal Form Controls */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.modal-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5E4636;
+}
+
+.modal-form input:not([type="checkbox"]) {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  font-size: 13px;
+  background-color: #FFFDF8;
+  border: 1px solid #E8D9B8;
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: #5E4636;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-repeat: no-repeat;
+  background-position: left 16px center;
+  background-size: 16px 16px;
+}
+
+.modal-form input[type="email"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235E4636' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2 .9-2 2V6c0-1.1.9-2 2-2z'/%3E%3Cpolyline points='22,6 12,13 2,6'/%3E%3C/svg%3E");
+}
+
+.modal-form input[type="password"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235E4636' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+}
+
+.modal-form input:not([type="checkbox"]):focus {
+  outline: none;
+  border-color: #5E4636;
+  box-shadow: 0 0 0 3px rgba(94, 70, 54, 0.15);
+}
+
+.modal-error {
+  color: #b3402e;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+.modal-btn-submit {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5E4636;
+  background-color: #F4C542;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 8px;
+}
+
+.modal-btn-submit:hover {
+  background-color: #e6b83c;
+}
+
+.modal-btn-submit:focus-visible {
+  outline: 2px solid #5E4636;
+  outline-offset: 2px;
+}
+
+.modal-btn-submit:active {
+  transform: scale(0.98);
+}
+
+.modal-footer {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #8A6A4E;
+  text-align: center;
+}
+
+.modal-footer button.link-btn {
+  background: transparent;
+  border: none;
+  color: #5E4636;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.modal-footer button.link-btn:disabled {
+  color: #B5A090;
+  cursor: not-allowed;
+  text-decoration: none;
+}
