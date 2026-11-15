@@ -51,6 +51,10 @@ app.get('/api/health/db', async (_request, response) => {
 	}
 });
 
+app.get('/', (_request, response) => {
+	response.redirect('/pages/login.html');
+});
+
 app.use(express.static(config.frontendDir, { dotfiles: 'deny' }));
 
 app.listen(config.port, config.host, () => {
