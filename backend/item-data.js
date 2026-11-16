@@ -2,6 +2,7 @@ export const itemSelect = `
   SELECT i.item_id, i.item_owner_id, i.item_title, i.item_description,
     i.item_defects, i.item_type, i.item_status, i.item_created_at,
     c.category_id, c.category_name, u.user_name AS owner_name,
+    u.user_avatar_url AS owner_avatar_url,
     sd.desired_description, dc.category_id AS desired_category_id,
     dc.category_name AS desired_category_name,
     COALESCE((
@@ -38,6 +39,7 @@ export function mapItem(row) {
 		owner: {
 			id: Number(row.item_owner_id),
 			name: row.owner_name,
+			avatar_url: row.owner_avatar_url,
 		},
 		swap_details: row.item_type === 'swap' ? {
 			desired_category: row.desired_category_id == null ? null : {

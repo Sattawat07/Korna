@@ -11,6 +11,7 @@ CREATE TABLE users (
     role VARCHAR(10) NOT NULL DEFAULT 'user',
     user_room_number VARCHAR(20) NOT NULL,
     user_phone_number VARCHAR(20),
+    user_avatar_url TEXT,
     user_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT users_name_not_blank CHECK (LENGTH(TRIM(user_name)) > 0),
     CONSTRAINT users_room_not_blank CHECK (LENGTH(TRIM(user_room_number)) > 0),

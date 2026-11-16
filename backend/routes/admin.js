@@ -19,7 +19,7 @@ function mapItem(row) {
 		images: row.images.map((image) => ({
 			id: Number(image.id), url: image.url, position: image.position,
 		})),
-		owner: { id: Number(row.item_owner_id), name: row.owner_name },
+		owner: { id: Number(row.item_owner_id), name: row.owner_name, avatar_url: row.owner_avatar_url },
 		swap_details: row.item_type === 'swap' ? {
 			desired_category: row.desired_category_id == null ? null : {
 				id: Number(row.desired_category_id), name: row.desired_category_name,
@@ -195,6 +195,7 @@ adminRouter.get('/items', async (req, res) => {
 				i.item_id, i.item_owner_id, i.item_title, i.item_description,
 				i.item_defects, i.item_type, i.item_status, i.item_created_at,
 				c.category_id, c.category_name, u.user_name AS owner_name,
+				u.user_avatar_url AS owner_avatar_url,
 				sd.desired_description,
 				dc.category_id AS desired_category_id,
 				dc.category_name AS desired_category_name,
@@ -264,6 +265,7 @@ adminRouter.get('/users', async (req, res) => {
 		const total = Number(countRows[0].total);
 		const { rows } = await pool.query(`
 			SELECT u.user_id, u.user_name, u.user_email, u.role,
+				u.user_avatar_url,
 				u.user_room_number, u.user_phone_number, u.user_created_at,
 				(SELECT COUNT(*) FROM items i
 					WHERE i.item_owner_id = u.user_id AND i.item_status <> 'removed') AS items_count
@@ -276,6 +278,7 @@ adminRouter.get('/users', async (req, res) => {
 			users: rows.map((row) => ({
 				id: Number(row.user_id),
 				name: row.user_name,
+				avatar_url: row.user_avatar_url,
 				email: row.user_email,
 				role: row.role,
 				room_number: row.user_room_number,
@@ -311,6 +314,7 @@ adminRouter.delete('/items/:id', async (req, res) => {
 				i.item_id, i.item_owner_id, i.item_title, i.item_description,
 				i.item_defects, i.item_type, i.item_status, i.item_created_at,
 				c.category_id, c.category_name, u.user_name AS owner_name,
+				u.user_avatar_url AS owner_avatar_url,
 				sd.desired_description,
 				dc.category_id AS desired_category_id,
 				dc.category_name AS desired_category_name,
@@ -392,10 +396,11 @@ adminRouter.patch('/users/:id/role', async (req, res) => {
 		const { rows } = await pool.query(`
 			WITH updated AS (
 				UPDATE users SET role = 'admin' WHERE user_id = $1
-				RETURNING user_id, user_name, user_email, role,
+				RETURNING user_id, user_name, user_email, role, user_avatar_url,
 					user_room_number, user_phone_number, user_created_at
 			)
 			SELECT u.user_id, u.user_name, u.user_email, u.role,
+				u.user_avatar_url,
 				u.user_room_number, u.user_phone_number, u.user_created_at,
 				(SELECT COUNT(*) FROM items i
 					WHERE i.item_owner_id = u.user_id AND i.item_status <> 'removed') AS items_count
@@ -410,6 +415,7 @@ adminRouter.patch('/users/:id/role', async (req, res) => {
 			user: {
 				id: Number(row.user_id),
 				name: row.user_name,
+				avatar_url: row.user_avatar_url,
 				email: row.user_email,
 				role: row.role,
 				room_number: row.user_room_number,

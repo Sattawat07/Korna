@@ -52,7 +52,8 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
 				n.read_at,
 				n.created_at,
 				u.user_id AS actor_id,
-				u.user_name AS actor_name
+				u.user_name AS actor_name,
+				u.user_avatar_url AS actor_avatar_url
 			FROM notifications n
 			JOIN users u ON u.user_id = n.actor_user_id
 			WHERE n.recipient_user_id = $1
@@ -70,6 +71,7 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
 				actor: {
 					id: Number(row.actor_id),
 					name: row.actor_name,
+					avatar_url: row.actor_avatar_url,
 				},
 				read_at: row.read_at,
 				created_at: row.created_at,

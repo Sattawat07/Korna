@@ -63,6 +63,7 @@ requestsRouter.get('/', requireAuth, async (req, res) => {
 				i.item_status,
 				u.user_id AS requester_id,
 				u.user_name AS requester_name,
+				u.user_avatar_url AS requester_avatar_url,
 				o.offer_id,
 				o.offer_description,
 				(
@@ -105,6 +106,7 @@ requestsRouter.get('/', requireAuth, async (req, res) => {
 			requester: {
 				id: Number(row.requester_id),
 				name: row.requester_name,
+				avatar_url: row.requester_avatar_url,
 			},
 			message: row.request_message,
 			status: row.request_status,

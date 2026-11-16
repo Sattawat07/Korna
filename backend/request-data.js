@@ -2,6 +2,7 @@ export const requestSelect = `
   SELECT r.request_id, r.request_message, r.request_status, r.request_created_at,
     i.item_id, i.item_title, i.item_type, i.item_status,
     u.user_id AS requester_id, u.user_name AS requester_name,
+    u.user_avatar_url AS requester_avatar_url,
     o.offer_id, o.offer_description,
     (SELECT im.image_url FROM item_images im WHERE im.image_item_id = i.item_id
       ORDER BY im.position, im.image_id LIMIT 1) AS item_image_url,
@@ -28,6 +29,7 @@ export function mapRequest(row) {
 		requester: {
 			id: Number(row.requester_id),
 			name: row.requester_name,
+			avatar_url: row.requester_avatar_url,
 		},
 		message: row.request_message,
 		status: row.request_status,
