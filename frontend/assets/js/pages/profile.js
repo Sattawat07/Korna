@@ -10,6 +10,7 @@ import {
   clearFieldErrors,
   imageViewer,
   openModal,
+  showDialog,
   setupModals,
   showFieldErrors,
   toast,
@@ -156,7 +157,7 @@ function itemRow(item) {
   const count = item.requests_count ?? 0;
   const canDelete = item.status === 'available';
   return `
-    <li class="row">
+    <li class="row" data-row-item="${item.id}">
       ${thumb(item.image_url, item.title)}
       <div class="row__info">
         <p class="row__title">${escapeHtml(item.title)}</p>
@@ -179,7 +180,7 @@ function requestRow(req) {
       ? `Swap offer: ${escapeHtml(req.swap_offer?.description ?? '')}`
       : escapeHtml(req.message ?? 'Free item request');
   return `
-    <li class="row">
+    <li class="row" data-row-request="${req.id}">
       ${thumb(req.item.image_url, req.item.title)}
       <div class="row__info">
         <p class="row__title">${escapeHtml(req.item.title)}</p>
@@ -352,6 +353,12 @@ function bindDetails() {
     const viewReq = event.target.closest('[data-view-request]');
     if (viewItem) showMyItem(Number(viewItem.dataset.viewItem));
     else if (viewReq) showSentRequest(Number(viewReq.dataset.viewRequest));
+    else if (!event.target.closest('button, a')) {
+      // คลิกที่ใดก็ได้ในแถว (รูป ชื่อ ฯลฯ) = View details
+      const row = event.target.closest('.row');
+      if (row?.dataset.rowItem) showMyItem(Number(row.dataset.rowItem));
+      else if (row?.dataset.rowRequest) showSentRequest(Number(row.dataset.rowRequest));
+    }
   });
 
   $('details-body').addEventListener('click', (event) => {
@@ -408,7 +415,7 @@ function showDetails(eyebrow, title, html) {
   $('details-title-m').textContent = title;
   $('details-body').innerHTML = html;
   const dialog = $('details-modal');
-  if (!dialog.open) dialog.showModal();
+  showDialog(dialog);
 }
 
 /** รายละเอียดโพสต์ของฉัน + คนที่ส่งคำขอ: GET /api/requests?role=received&item_id=<id> */

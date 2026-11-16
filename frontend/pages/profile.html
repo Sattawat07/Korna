@@ -127,7 +127,7 @@
         </div>
         <div class="modal__body">
           <label class="soft-input">
-            <i data-icon="user"></i><input name="name" maxlength="100" placeholder="Name Surname" aria-label="ชื่อ" required autocomplete="name" />
+            <i data-icon="user"></i><input name="name" maxlength="100" autofocus placeholder="Name Surname" aria-label="ชื่อ" required autocomplete="name" />
           </label>
           <p class="field-error" data-error-for="name"></p>
           <label class="soft-input">
@@ -147,7 +147,7 @@
     </dialog>
 
     <!-- Modal: แก้ไขโพสต์ -->
-    <dialog class="modal" id="edit-item-modal" aria-labelledby="edit-item-title">
+    <dialog class="modal" id="edit-item-modal" autofocus aria-labelledby="edit-item-title">
       <form id="edit-item-form" novalidate>
         <div class="modal__header">
           <h2 class="modal__title" id="edit-item-title">Edit post</h2>
@@ -183,7 +183,7 @@
     </dialog>
 
     <!-- Modal: ยืนยันซ่อนโพสต์ -->
-    <dialog class="modal modal--sm" id="delete-modal" aria-labelledby="delete-title">
+    <dialog class="modal modal--sm" id="delete-modal" autofocus aria-labelledby="delete-title">
       <div class="modal__header">
         <h2 class="modal__title" id="delete-title">Delete post?</h2>
         <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
@@ -197,7 +197,7 @@
     </dialog>
 
     <!-- Modal: รายละเอียดโพสต์ / คำขอ -->
-    <dialog class="modal modal--details" id="details-modal" aria-labelledby="details-title-m">
+    <dialog class="modal modal--details" id="details-modal" autofocus aria-labelledby="details-title-m">
       <div class="modal__header">
         <div>
           <p class="details-modal__eyebrow" id="details-eyebrow"></p>

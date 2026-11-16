@@ -522,6 +522,11 @@ html[data-theme='dark'] .icon-btn {
   overscroll-behavior: contain;
 }
 
+.modal:focus,
+.modal:focus-visible {
+  outline: none;
+}
+
 .modal::backdrop {
   background: var(--color-overlay);
 }
@@ -611,7 +616,6 @@ html[data-theme='dark'] .icon-btn {
   margin: var(--space-1) calc(-1 * var(--modal-px)) calc(-1 * var(--modal-pb));
   padding: var(--space-3) var(--modal-px) var(--modal-pb);
   background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
 }
 
 .modal__message {

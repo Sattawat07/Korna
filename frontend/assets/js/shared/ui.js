@@ -39,8 +39,21 @@ export function setupModals(root = document) {
 
 export function openModal(id) {
   const dialog = document.getElementById(id);
-  if (dialog && !dialog.open) dialog.showModal();
+  if (dialog) showDialog(dialog);
   return dialog;
+}
+
+/**
+ * เปิด dialog — ถ้า <dialog autofocus> ให้โฟกัสที่ตัว dialog เอง
+ * (ไม่ขึ้นกรอบโฟกัสที่ปุ่มปิดตอนเปิดด้วยเมาส์ แต่กด Tab ต่อได้ทันที)
+ */
+export function showDialog(dialog) {
+  if (dialog.open) return;
+  dialog.showModal();
+  if (dialog.hasAttribute('autofocus')) {
+    dialog.tabIndex = -1;
+    dialog.focus();
+  }
 }
 
 /**
@@ -229,7 +242,9 @@ export function setupUploader(root, { max = 5, title = 'Adjust image' } = {}) {
     event.preventDefault();
     root.classList.add('is-dragover');
   });
-  root.addEventListener('dragleave', () => root.classList.remove('is-dragover'));
+  root.addEventListener('dragleave', (event) => {
+    if (!root.contains(event.relatedTarget)) root.classList.remove('is-dragover');
+  });
   root.addEventListener('drop', (event) => {
     event.preventDefault();
     root.classList.remove('is-dragover');

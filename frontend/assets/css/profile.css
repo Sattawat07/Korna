@@ -296,9 +296,18 @@
   border-bottom: 0;
 }
 
+.row {
+  cursor: pointer;
+}
+
 .row:hover,
 .row:focus-within {
   background: var(--color-hover);
+}
+
+.row:hover .row__title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .row__thumb {

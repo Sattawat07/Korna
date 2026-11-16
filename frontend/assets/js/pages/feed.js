@@ -4,7 +4,7 @@ import { escapeHtml, itemStatusLabel } from '../shared/format.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
 import { setupNotifications } from '../shared/notifications.js';
 import { errorText, loadMe } from '../shared/session.js';
-import { clearErrorOnInput, clearFieldErrors, openModal, setupModals, setupUploader, showFieldErrors, toast } from '../shared/ui.js';
+import { clearErrorOnInput, clearFieldErrors, openModal, setupModals, setupUploader, showDialog, showFieldErrors, toast } from '../shared/ui.js';
 
 // ---------- สถานะของหน้า ----------
 const PAGE_SIZE = 12;
@@ -240,7 +240,13 @@ cardsEl.addEventListener('click', (event) => {
   const open = event.target.closest('[data-open-item]');
   if (open) return openItem(Number(open.dataset.openItem));
   const btn = event.target.closest('[data-request]');
-  if (!btn || btn.disabled) return;
+  if (!btn) {
+    // คลิกที่ใดก็ได้ในการ์ด (ชื่อ รูปโปรไฟล์ ฯลฯ) = ดูรายละเอียด
+    const card = event.target.closest('.card');
+    if (card && !event.target.closest('.card__footer')) openItem(Number(card.dataset.id));
+    return;
+  }
+  if (btn.disabled) return;
   const item = items.find((i) => i.id === Number(btn.dataset.request));
   if (item) openRequest(item);
 });
@@ -273,7 +279,7 @@ async function openItem(id) {
   $('item-modal-owner').textContent = summary ? `Posted by ${summary.owner.name}` : '';
   $('item-modal-body').innerHTML = '<p class="details-text">Loading...</p>';
   const dialog = $('item-modal');
-  if (!dialog.open) dialog.showModal();
+  showDialog(dialog);
   try {
     const { item } = await request(`/items/${id}`);
     if (openItemId !== id) return;
