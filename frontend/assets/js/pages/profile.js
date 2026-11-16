@@ -141,7 +141,7 @@ function itemRow(item) {
       <span class="row__date">${formatDate(item.created_at)}</span>
       <div class="row__actions">
         <button class="btn btn--outline" type="button" data-view-item="${item.id}">View details</button>
-        ${canDelete ? `<button class="btn btn--outline" type="button" data-edit-item="${item.id}">Edit</button>` : ''}
+        <button class="btn btn--outline" type="button" data-edit-item="${item.id}" ${canDelete ? '' : 'disabled title="Only available posts can be edited"'}>Edit</button>
         <button class="btn btn--outline" type="button" data-delete="${item.id}" ${canDelete ? '' : 'disabled title="Only available posts can be deleted"'}>Delete</button>
       </div>
     </li>`;
@@ -466,7 +466,7 @@ function bindEditItem() {
 
   $('list').addEventListener('click', async (event) => {
     const btn = event.target.closest('[data-edit-item]');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     const item = myItems.find((i) => i.id === Number(btn.dataset.editItem));
     if (!item) return;
     editingId = item.id;
