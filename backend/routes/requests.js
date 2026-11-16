@@ -136,38 +136,62 @@ requestsRouter.patch('/:id/decision', requireAuth, async (req, res) => {
 	const id = positiveId(req.params.id);
 	const decision = req.body?.decision;
 	const details = {};
-	if (id === null) details.id = 'Enter a valid request ID';
+
+	if (id === null) {
+		details.id = 'Enter a valid request ID';
+	}
 	if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body) ||
-		!['accepted', 'rejected'].includes(decision) || Object.keys(req.body).some((key) => key !== 'decision'))
+		!['accepted', 'rejected'].includes(decision) || Object.keys(req.body).some((key) => key !== 'decision')) {
 		details.decision = 'Decision must be accepted or rejected';
-	if (Object.keys(details).length) return validationError(res, details);
+	}
+	if (Object.keys(details).length) {
+		return validationError(res, details);
+	}
 
 	let client;
 	try {
 		client = await pool.connect();
 		await client.query('BEGIN');
+
 		const located = await client.query('SELECT request_item_id FROM requests WHERE request_id = $1', [id]);
 		if (!located.rows.length) {
 			await client.query('ROLLBACK');
-			return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Request not found.' } });
+			return res.status(404).json({
+				error: {
+					code: 'NOT_FOUND',
+					message: 'Request not found.',
+				},
+			});
 		}
+
 		const itemId = Number(located.rows[0].request_item_id);
 		const itemResult = await client.query(`SELECT item_owner_id, item_status FROM items
       WHERE item_id = $1 FOR UPDATE`, [itemId]);
 		if (!itemResult.rows.length) {
 			await client.query('ROLLBACK');
-			return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Request not found.' } });
+			return res.status(404).json({
+				error: {
+					code: 'NOT_FOUND',
+					message: 'Request not found.',
+				},
+			});
 		}
+
 		const item = itemResult.rows[0];
 		if (Number(item.item_owner_id) !== req.user.id) {
-			await client.query('ROLLBACK'); return forbidden(res);
+			await client.query('ROLLBACK');
+			return forbidden(res);
 		}
+
 		const requestResult = await client.query(`SELECT request_status, requester_user_id
       FROM requests WHERE request_id = $1 FOR UPDATE`, [id]);
 		if (requestResult.rows[0].request_status !== 'pending' || item.item_status !== 'pending') {
-			await client.query('ROLLBACK'); return invalidState(res);
+			await client.query('ROLLBACK');
+			return invalidState(res);
 		}
+
 		await client.query('UPDATE requests SET request_status = $2 WHERE request_id = $1', [id, decision]);
+
 		if (decision === 'accepted') {
 			await client.query(`WITH rejected AS (
         UPDATE requests SET request_status = 'rejected'
@@ -182,9 +206,11 @@ requestsRouter.patch('/:id/decision', requireAuth, async (req, res) => {
 		} else {
 			const { rows } = await client.query(`SELECT COUNT(*) AS pending_count FROM requests
         WHERE request_item_id = $1 AND request_status = 'pending'`, [itemId]);
-			if (Number(rows[0].pending_count) === 0)
+			if (Number(rows[0].pending_count) === 0) {
 				await client.query("UPDATE items SET item_status = 'available' WHERE item_id = $1", [itemId]);
+			}
 		}
+
 		await client.query(`INSERT INTO notifications
       (recipient_user_id, actor_user_id, notification_item_id,
         notification_request_id, notification_type, notification_decision)
@@ -192,10 +218,18 @@ requestsRouter.patch('/:id/decision', requireAuth, async (req, res) => {
 			[Number(requestResult.rows[0].requester_user_id), req.user.id, itemId, id, decision]);
 		const { rows } = await client.query(`${requestSelect} WHERE r.request_id = $1`, [id]);
 		const request = mapRequest(rows[0]);
+
 		await client.query('COMMIT');
 		return res.json({ request });
 	} catch (error) {
-		if (client) try { await client.query('ROLLBACK'); } catch (rollbackError) { console.error(rollbackError); }
+		if (client) {
+			try {
+				await client.query('ROLLBACK');
+			} catch (rollbackError) {
+				console.error('Failed to roll back request decision:', rollbackError);
+			}
+		}
+
 		return databaseError(res, error, 'decide request');
 	} finally {
 		client?.release();
