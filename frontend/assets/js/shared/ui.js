@@ -120,6 +120,7 @@ export function setupUploader(root, { max = 5, title = 'Adjust image' } = {}) {
     <div class="uploader__viewer" hidden>
       <img alt="" />
       <div class="uploader__tools">
+        <button type="button" class="float-btn float-btn--icon" data-uploader-zoom aria-label="ดูรูปขนาดใหญ่" title="View larger">${icon('expand')}</button>
         <button type="button" class="float-btn" data-uploader-crop>${icon('crop')}Adjust</button>
         <button type="button" class="float-btn float-btn--icon" data-uploader-remove aria-label="ลบรูปนี้" title="Remove">${icon('trash')}</button>
       </div>
@@ -203,9 +204,11 @@ export function setupUploader(root, { max = 5, title = 'Adjust image' } = {}) {
   });
 
   root.addEventListener('click', async (event) => {
+    if (event.target === img) return openLightbox(entries.map((e) => e.url), index);
     const target = event.target.closest('button');
     if (!target || busy) return;
-    if (target.matches('[data-uploader-add]')) pick();
+    if (target.matches('[data-uploader-zoom]')) openLightbox(entries.map((e) => e.url), index);
+    else if (target.matches('[data-uploader-add]')) pick();
     else if (target.matches('[data-uploader-index]')) {
       index = Number(target.dataset.uploaderIndex);
       render();
@@ -273,7 +276,7 @@ export function imageViewer(urls, alt) {
   const many = urls.length > 1;
   return `<div class="gallery" data-gallery='${JSON.stringify(urls).replaceAll("'", '&#39;')}' data-index="0">
     <img src="${urls[0]}" alt="${alt}" />
-    <a class="float-btn gallery__open" href="${urls[0]}" target="_blank" rel="noopener" title="Open full size">${icon('expand')}<span class="sr-only">เปิดรูปขนาดเต็ม</span></a>
+    <button type="button" class="float-btn float-btn--icon gallery__open" data-gallery-zoom aria-label="ดูรูปขนาดใหญ่" title="View larger">${icon('expand')}</button>
     ${
       many
         ? `<button type="button" class="gallery__nav gallery__nav--prev" data-gallery-step="-1" aria-label="รูปก่อนหน้า">${icon('chevronRight')}</button>
@@ -291,14 +294,17 @@ function stepGallery(gallery, step) {
   const img = gallery.querySelector(':scope > img');
   img.classList.remove('is-broken');
   img.src = urls[i];
-  gallery.querySelector('.gallery__open')?.setAttribute('href', urls[i]);
   const count = gallery.querySelector('.gallery__count');
   if (count) count.textContent = `${i + 1} / ${urls.length}`;
 }
 
 document.addEventListener('click', (event) => {
   const btn = event.target.closest('[data-gallery-step]');
-  if (btn) stepGallery(btn.closest('.gallery'), Number(btn.dataset.galleryStep));
+  if (btn) return stepGallery(btn.closest('.gallery'), Number(btn.dataset.galleryStep));
+  const gallery = event.target.closest('.gallery[data-gallery]');
+  if (gallery && (event.target.closest('[data-gallery-zoom]') || event.target.matches('.gallery > img'))) {
+    openLightbox(JSON.parse(gallery.dataset.gallery), Number(gallery.dataset.index));
+  }
 });
 
 // ลูกศรซ้าย/ขวาเลื่อนรูปได้เมื่อโฟกัสอยู่ในตัวดูรูป
@@ -351,4 +357,51 @@ export function toast(message, { href, label } = {}) {
   box.hidden = false;
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => (box.hidden = true), 5000);
+}
+
+/** ดูรูปขนาดใหญ่เป็น popup บนหน้าเดิม (ลูกศรซ้าย/ขวาเลื่อนรูป, Esc ปิด) */
+let lightbox = null;
+export function openLightbox(urls, start = 0) {
+  if (!urls.length) return;
+  if (!lightbox) {
+    lightbox = document.createElement('dialog');
+    lightbox.className = 'lightbox';
+    lightbox.setAttribute('aria-label', 'ดูรูปขนาดใหญ่');
+    lightbox.innerHTML = `
+      <div class="lightbox__stage"><img alt="" /></div>
+      <button type="button" class="lightbox__btn lightbox__close" data-lb-close aria-label="ปิด">${icon('close')}</button>
+      <button type="button" class="lightbox__btn lightbox__prev" data-lb-step="-1" aria-label="รูปก่อนหน้า">${icon('chevronRight')}</button>
+      <button type="button" class="lightbox__btn lightbox__next" data-lb-step="1" aria-label="รูปถัดไป">${icon('chevronRight')}</button>
+      <p class="lightbox__count"></p>`;
+    document.body.append(lightbox);
+    lightbox.addEventListener('click', (event) => {
+      if (event.target.closest('[data-lb-close]') || event.target === lightbox || event.target.matches('.lightbox__stage')) {
+        lightbox.close();
+        return;
+      }
+      const step = event.target.closest('[data-lb-step]');
+      if (step) lightbox.show_(Number(step.dataset.lbStep));
+    });
+    lightbox.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') lightbox.show_(-1);
+      else if (event.key === 'ArrowRight') lightbox.show_(1);
+      else return;
+      event.preventDefault();
+    });
+  }
+  let index = start;
+  const many = urls.length > 1;
+  lightbox.show_ = (step = 0) => {
+    index = (index + step + urls.length) % urls.length;
+    const image = lightbox.querySelector('img');
+    image.classList.remove('is-broken');
+    image.src = urls[index];
+    image.alt = `Image ${index + 1} of ${urls.length}`;
+    lightbox.querySelector('.lightbox__count').textContent = many ? `${index + 1} / ${urls.length}` : '';
+  };
+  lightbox.querySelectorAll('[data-lb-step]').forEach((b) => (b.hidden = !many));
+  lightbox.show_(0);
+  lightbox.showModal();
+  lightbox.tabIndex = -1;
+  lightbox.focus(); // Tab ต่อไปที่ปุ่มปิดได้ ไม่ขึ้นกรอบโฟกัสตอนเปิดด้วยเมาส์
 }
