@@ -11,6 +11,7 @@ import { meRouter } from './routes/me.js';
 import { requestsRouter } from './routes/requests.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { adminRouter } from './routes/admin.js';
+import { itemsRouter } from './routes/items.js';
 
 await mkdir(config.uploadDir, { recursive: true });
 
@@ -33,6 +34,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use('/uploads', express.static(config.uploadDir, { index: false, dotfiles: 'deny' }));
 app.use('/api/categories', categoriesRouter);
+app.use('/api/items', itemsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/me', meRouter);
 app.use('/api/requests', requestsRouter);
