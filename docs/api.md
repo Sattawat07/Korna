@@ -226,15 +226,32 @@ ID ในตัวอย่างเป็นเพียงตัวอย่�
   "defects": "Small scratch",
   "type": "swap",
   "status": "available",
-  "category": { "id": 4, "name": "Electronics" },
+  "category": {
+    "id": 4,
+    "name": "Electronics"
+  },
   "image_url": "/uploads/items/abc.webp",
   "images": [
-    { "id": 101, "url": "/uploads/items/abc.webp", "position": 0 },
-    { "id": 102, "url": "/uploads/items/def.webp", "position": 1 }
+    {
+      "id": 101,
+      "url": "/uploads/items/abc.webp",
+      "position": 0
+    },
+    {
+      "id": 102,
+      "url": "/uploads/items/def.webp",
+      "position": 1
+    }
   ],
-  "owner": { "id": 1, "name": "Nina" },
+  "owner": {
+    "id": 1,
+    "name": "Nina"
+  },
   "swap_details": {
-    "desired_category": { "id": 1, "name": "Books & Documents" },
+    "desired_category": {
+      "id": 1,
+      "name": "Books & Documents"
+    },
     "desired_description": "Looking for a novel"
   },
   "created_at": "2026-10-18T10:00:00.000Z"
@@ -258,7 +275,11 @@ Query string ทุกตัวไม่จำเป็น:
 | `page` | เลขหน้าตั้งแต่ 1 | แบ่งหน้า; ค่าเริ่มต้น 1 |
 | `limit` | จำนวนไม่เกิน 50 | จำนวนต่อหน้า; ค่าเริ่มต้น 12 |
 
-ตัวกรองใช้ร่วมกันได้ เช่น ค้นคำว่า lamp ในโพสต์ swap ของช่วงวันที่กำหนด `sort` เรียงจาก `item_created_at` และใช้ `item_id` ตัดสินลำดับเมื่อเวลาเท่ากัน `from`/`to` อิงวันที่ตามเวลาไทยและรวมวันที่ต้นกับปลายช่วง ถ้า `from` มากกว่า `to` หรือรูปแบบวันผิด ตอบ `400 VALIDATION_ERROR` ฟีดแสดงเฉพาะ `available` และ `pending`; `removed` ไม่แสดง
+ตัวกรองใช้ร่วมกันได้ เช่น ค้นคำว่า lamp ในโพสต์ swap ของช่วงวันที่กำหนด
+
+`sort` เรียงจาก `item_created_at` และใช้ `item_id` ตัดสินลำดับเมื่อเวลาเท่ากัน `from`/`to` อิงวันที่ตามเวลาไทยและรวมวันที่ต้นกับปลายช่วง ถ้า `from` มากกว่า `to` หรือรูปแบบวันผิด ตอบ `400 VALIDATION_ERROR`
+
+ฟีดแสดงเฉพาะ `available` และ `pending`; `removed` ไม่แสดง
 
 เมื่อมี session ล็อกอิน ฟีดไม่รวมโพสต์ของผู้ใช้คนนั้นทั้งใน `items` และ `pagination.total`; ผู้ใช้ยังดูโพสต์ของตนผ่าน `GET /api/me/items` หรือเปิดรายละเอียดด้วย URL ตรงได้ ผู้ชมที่ไม่ล็อกอินเห็นโพสต์ที่ตรงตัวกรองทั้งหมด
 
@@ -268,8 +289,27 @@ Query string ทุกตัวไม่จำเป็น:
 
 ```json
 {
-  "items": [ { "id": 12, "title": "Desk lamp", "type": "swap", "status": "available", "category": { "id": 4, "name": "Electronics" }, "image_url": "/uploads/items/abc.webp", "images": [{ "id": 101, "url": "/uploads/items/abc.webp", "position": 0 }], "owner": { "id": 1, "name": "Nina" }, "created_at": "2026-10-18T10:00:00.000Z" } ],
-  "pagination": { "page": 1, "limit": 12, "total": 1, "total_pages": 1 }
+  "items": [
+    {
+      "id": 12,
+      "title": "Desk lamp",
+      "type": "swap",
+      "status": "available",
+      "category": { "id": 4, "name": "Electronics" },
+      "image_url": "/uploads/items/abc.webp",
+      "images": [
+        { "id": 101, "url": "/uploads/items/abc.webp", "position": 0 }
+      ],
+      "owner": { "id": 1, "name": "Nina" },
+      "created_at": "2026-10-18T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 12,
+    "total": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -313,14 +353,25 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 ```json
 {
   "id": 31,
-  "item": { "id": 12, "title": "Desk lamp", "type": "swap", "status": "pending", "image_url": "/uploads/items/abc.webp" },
-  "requester": { "id": 2, "name": "Ton" },
+  "item": {
+    "id": 12,
+    "title": "Desk lamp",
+    "type": "swap",
+    "status": "pending",
+    "image_url": "/uploads/items/abc.webp"
+  },
+  "requester": {
+    "id": 2,
+    "name": "Ton"
+  },
   "message": "Interested in exchanging",
   "status": "pending",
   "swap_offer": {
     "description": "A novel in good condition",
     "image_url": "/uploads/offers/xyz.webp",
-    "images": [{ "id": 201, "url": "/uploads/offers/xyz.webp", "position": 0 }]
+    "images": [
+      { "id": 201, "url": "/uploads/offers/xyz.webp", "position": 0 }
+    ]
   },
   "created_at": "2026-10-18T11:00:00.000Z"
 }

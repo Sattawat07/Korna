@@ -8,7 +8,9 @@
 
 บนเครื่อง Linux Mint ที่เปิดผ่าน Tailscale Serve ให้ Node ฟัง `127.0.0.1:3000` และใช้ Serve ส่ง HTTPS เข้า port นี้ ตั้ง `COOKIE_SECURE=true` และ `TRUST_PROXY=true` ใน `.env` ก่อนใช้ session cookie ผ่าน HTTPS เครื่องเพื่อนเปิด URL ของ Serve และเรียก API ด้วย path `/api/...`
 
-session เก็บในตาราง `sessions` และ API สมัครสมาชิก ล็อกอิน ออกจากระบบ ตรวจสิทธิ์ ฟีด โพสต์ คำขอ การแจ้งเตือน และ admin พร้อมใช้งานตาม `docs/api.md` การสร้างโพสต์และส่งข้อเสนอแลกใช้ `multipart/form-data`; ไฟล์รูปเก็บใน `uploads/items/` และ `uploads/offers/` ตามลำดับ
+session เก็บในตาราง `sessions` และ API สมัครสมาชิก ล็อกอิน ออกจากระบบ ตรวจสิทธิ์ ฟีด โพสต์ คำขอ การแจ้งเตือน และ admin พร้อมใช้งานตาม `docs/api.md`
+
+การสร้างโพสต์และส่งข้อเสนอแลกใช้ `multipart/form-data` ไฟล์รูปเก็บใน `uploads/items/` และ `uploads/offers/` ตามลำดับ
 
 ฟังก์ชัน `backend/password.js` คืน `passwordHash` (สตริง Argon2id ที่มีค่า salt และพารามิเตอร์อยู่ภายใน) กับ `passwordSalt` (salt เดียวกันในรูป base64 สำหรับคอลัมน์แยกตามข้อกำหนดงาน) ใช้ `verifyPassword` ตรวจรหัสผ่านกับ hash; ไม่ต้องสร้าง salt ใหม่ตอนตรวจ
 

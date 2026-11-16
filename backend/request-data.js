@@ -19,17 +19,25 @@ export function mapRequest(row) {
 	return {
 		id: Number(row.request_id),
 		item: {
-			id: Number(row.item_id), title: row.item_title, type: row.item_type,
-			status: row.item_status, image_url: row.item_image_url
+			id: Number(row.item_id),
+			title: row.item_title,
+			type: row.item_type,
+			status: row.item_status,
+			image_url: row.item_image_url,
 		},
-		requester: { id: Number(row.requester_id), name: row.requester_name },
+		requester: {
+			id: Number(row.requester_id),
+			name: row.requester_name,
+		},
 		message: row.request_message,
 		status: row.request_status,
 		swap_offer: row.offer_id === null ? null : {
 			description: row.offer_description,
 			image_url: row.offer_image_url,
 			images: row.offer_images.map((image) => ({
-				id: Number(image.id), url: image.url, position: image.position,
+				id: Number(image.id),
+				url: image.url,
+				position: image.position,
 			})),
 		},
 		created_at: row.request_created_at,

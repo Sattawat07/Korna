@@ -25,15 +25,24 @@ export function mapItem(row) {
 		defects: row.item_defects,
 		type: row.item_type,
 		status: row.item_status,
-		category: { id: Number(row.category_id), name: row.category_name },
+		category: {
+			id: Number(row.category_id),
+			name: row.category_name,
+		},
 		image_url: row.image_url,
 		images: row.images.map((image) => ({
-			id: Number(image.id), url: image.url, position: image.position,
+			id: Number(image.id),
+			url: image.url,
+			position: image.position,
 		})),
-		owner: { id: Number(row.item_owner_id), name: row.owner_name },
+		owner: {
+			id: Number(row.item_owner_id),
+			name: row.owner_name,
+		},
 		swap_details: row.item_type === 'swap' ? {
 			desired_category: row.desired_category_id == null ? null : {
-				id: Number(row.desired_category_id), name: row.desired_category_name,
+				id: Number(row.desired_category_id),
+				name: row.desired_category_name,
 			},
 			desired_description: row.desired_description,
 		} : null,
@@ -42,7 +51,10 @@ export function mapItem(row) {
 }
 
 export function positiveId(value) {
-	if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return null;
+	if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) {
+		return null;
+	}
+
 	const id = Number(value);
 	return Number.isSafeInteger(id) ? id : null;
 }
@@ -50,8 +62,10 @@ export function positiveId(value) {
 export function validationError(res, details) {
 	return res.status(400).json({
 		error: {
-			code: 'VALIDATION_ERROR', message: 'Please check the submitted fields.', details,
-		}
+			code: 'VALIDATION_ERROR',
+			message: 'Please check the submitted fields.',
+			details,
+		},
 	});
 }
 
@@ -59,27 +73,35 @@ export function databaseError(res, error, action) {
 	console.error(`Failed to ${action}:`, error);
 	return res.status(503).json({
 		error: {
-			code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.',
-		}
+			code: 'DATABASE_UNAVAILABLE',
+			message: 'Database is temporarily unavailable.',
+		},
 	});
 }
 
 export function notFound(res) {
-	return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Item not found.' } });
+	return res.status(404).json({
+		error: {
+			code: 'NOT_FOUND',
+			message: 'Item not found.',
+		},
+	});
 }
 
 export function forbidden(res) {
 	return res.status(403).json({
 		error: {
-			code: 'FORBIDDEN', message: 'You do not have permission to access this item.',
-		}
+			code: 'FORBIDDEN',
+			message: 'You do not have permission to access this item.',
+		},
 	});
 }
 
 export function invalidState(res) {
 	return res.status(409).json({
 		error: {
-			code: 'INVALID_STATE', message: 'Item is not in a state that allows this action.',
-		}
+			code: 'INVALID_STATE',
+			message: 'Item is not in a state that allows this action.',
+		},
 	});
 }
