@@ -8,12 +8,12 @@
 
 บนเครื่อง Linux Mint ที่เปิดผ่าน Tailscale Serve ให้ Node ฟัง `127.0.0.1:3000` และใช้ Serve ส่ง HTTPS เข้า port นี้ ตั้ง `COOKIE_SECURE=true` และ `TRUST_PROXY=true` ใน `.env` ก่อนใช้ session cookie ผ่าน HTTPS เครื่องเพื่อนเปิด URL ของ Serve และเรียก API ด้วย path `/api/...`
 
-การตั้งค่า session และตาราง `sessions` เตรียมพร้อมแล้ว แต่ endpoint สมัครสมาชิก ล็อกอิน ออกจากระบบ และตรวจสิทธิ์ยังไม่ได้ทำ
+session เก็บในตาราง `sessions` และ API สมัครสมาชิก ล็อกอิน ออกจากระบบ ตรวจสิทธิ์ ฟีด โพสต์ คำขอ การแจ้งเตือน และ admin พร้อมใช้งานตาม `docs/api.md` การสร้างโพสต์และส่งข้อเสนอแลกใช้ `multipart/form-data`; ไฟล์รูปเก็บใน `uploads/items/` และ `uploads/offers/` ตามลำดับ
 
 ฟังก์ชัน `backend/password.js` คืน `passwordHash` (สตริง Argon2id ที่มีค่า salt และพารามิเตอร์อยู่ภายใน) กับ `passwordSalt` (salt เดียวกันในรูป base64 สำหรับคอลัมน์แยกตามข้อกำหนดงาน) ใช้ `verifyPassword` ตรวจรหัสผ่านกับ hash; ไม่ต้องสร้าง salt ใหม่ตอนตรวจ
 
-ก่อนทำ API สมัครสมาชิก ให้ตั้ง `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` และ `SMTP_FROM` ใน `.env` สำหรับ Nodemailer ถ้าใช้ Gmail ให้เปิดการยืนยันตัวตนสองขั้นตอนและสร้าง App Password สำหรับ `SMTP_PASS` ใช้บัญชีส่งเมลของโปรเจกต์แทนบัญชีส่วนตัวหากเป็นไปได้ ค่าเหล่านี้ยังไม่ถูกอ่านโดย server จนกว่าจะเพิ่ม API ส่ง OTP
+ตั้ง `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` และ `SMTP_FROM` ใน `.env` สำหรับ Nodemailer ถ้าใช้ Gmail ให้เปิดการยืนยันตัวตนสองขั้นตอนและสร้าง App Password สำหรับ `SMTP_PASS` ใช้บัญชีส่งเมลของโปรเจกต์แทนบัญชีส่วนตัวหากเป็นไปได้
 
 การสมัครที่วางแผนไว้ใช้ OTP ทางอีเมลอายุ 5 นาที ข้อมูลสมัครและ OTP ที่รอยืนยันอยู่ใน `Map` ของ Node.js ไม่เพิ่มตาราง OTP และไม่สร้างบัญชีใน `users` จนกว่ายืนยันสำเร็จ หากรีสตาร์ต Node ระหว่างรอ ผู้ใช้ต้องเริ่มสมัครใหม่ หลังยืนยันสำเร็จให้ล็อกอินตามปกติเพื่อรับ session cookie; session หลังล็อกอินยังเก็บใน PostgreSQL
 
-admin คนแรก: สมัครและยืนยันอีเมลให้เรียบร้อยก่อน แล้วผู้ดูแลฐานข้อมูลเปลี่ยน `role` ของบัญชีนั้นเป็น `admin` ด้วย SQL โดยระบุ `user_id` ให้ตรงบัญชี ตรวจ ID และอีเมลก่อนรัน `UPDATE users SET role = 'admin' WHERE user_id = <id>;` หลังจากนั้น admin สามารถมอบสิทธิ์ให้บัญชีอื่นผ่าน API admin ที่จะทำต่อไป
+admin คนแรก: สมัครและยืนยันอีเมลให้เรียบร้อยก่อน แล้วผู้ดูแลฐานข้อมูลเปลี่ยน `role` ของบัญชีนั้นเป็น `admin` ด้วย SQL โดยระบุ `user_id` ให้ตรงบัญชี ตรวจ ID และอีเมลก่อนรัน `UPDATE users SET role = 'admin' WHERE user_id = <id>;` หลังจากนั้น admin สามารถมอบสิทธิ์ให้บัญชีอื่นผ่าน API admin
