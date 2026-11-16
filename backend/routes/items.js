@@ -45,6 +45,9 @@ itemsRouter.get('/', async (req, res) => {
 	if (type !== undefined) filter('i.item_type = ?', type);
 	if (from !== undefined) filter("(i.item_created_at AT TIME ZONE 'Asia/Bangkok')::date >= ?::date", from);
 	if (to !== undefined) filter("(i.item_created_at AT TIME ZONE 'Asia/Bangkok')::date <= ?::date", to);
+	const viewerId = positiveId(String(req.session?.userId ?? ''));
+	if (viewerId !== null)
+		filter('i.item_owner_id <> ?', viewerId);
 	const where = `WHERE ${conditions.join(' AND ')}`;
 	const direction = sort === 'newest' ? 'DESC' : 'ASC';
 	try {

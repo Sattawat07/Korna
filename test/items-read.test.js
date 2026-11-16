@@ -16,12 +16,15 @@ test('feed filters, paginates and exposes public item detail', async (t) => {
     image_url: '/uploads/items/lamp.webp',
   };
   let missing = false;
+  let viewerId = null;
   t.mock.method(pool, 'query', async (sql, values) => {
     queries.push({ sql, values });
-    if (sql.includes('COUNT(*) AS total')) return { rows: [{ total: '1' }] };
-    return { rows: missing ? [] : [row] };
+    const hiddenOwnPost = sql.includes('i.item_owner_id <>') && values.includes(8);
+    if (sql.includes('COUNT(*) AS total')) return { rows: [{ total: hiddenOwnPost ? '0' : '1' }] };
+    return { rows: missing || hiddenOwnPost ? [] : [row] };
   });
   const app = express();
+  app.use((req, _res, next) => { req.session = viewerId ? { userId: viewerId } : {}; next(); });
   app.use('/api/items', itemsRouter);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
@@ -38,6 +41,21 @@ test('feed filters, paginates and exposes public item detail', async (t) => {
   assert.equal(detail.status, 200);
   assert.equal((await detail.json()).item.swap_details.desired_description, 'Novel');
   assert.match(queries.at(-1).sql, /item_status <> 'removed'/);
+  viewerId = '8';
+  const ownFeed = await fetch(`${url}?q=lamp`);
+  assert.equal(ownFeed.status, 200);
+  assert.deepEqual(await ownFeed.json(), {
+    items: [], pagination: { page: 1, limit: 12, total: 0, total_pages: 0 },
+  });
+  assert.deepEqual(queries.at(-2).values, ['lamp', 8]);
+  assert.deepEqual(queries.at(-1).values, ['lamp', 8, 12, 0]);
+  assert.match(queries.at(-2).sql, /i\.item_owner_id <> \$2/);
+  assert.match(queries.at(-1).sql, /i\.item_owner_id <> \$2/);
+  assert.equal((await fetch(`${url}/12`)).status, 200);
+  viewerId = 7;
+  const otherFeed = await fetch(url);
+  assert.equal((await otherFeed.json()).items[0].id, 12);
+  viewerId = null;
   missing = true;
   assert.equal((await fetch(`${url}/12`)).status, 404);
   const queryCount = queries.length;
