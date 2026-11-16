@@ -103,13 +103,18 @@ export function setupNotifications() {
     panel.style.right = `${Math.max(16, document.documentElement.clientWidth - r.right)}px`;
   };
 
-  const close = () => {
+  const close = ({ restoreFocus = false } = {}) => {
+    if (panel.hidden) return;
     panel.hidden = true;
     buttons.forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    if (restoreFocus) anchor?.focus();
   };
 
-  const open = async (btn) => {
+  const links = () => Array.from(panel.querySelectorAll('[data-notif]'));
+
+  const open = async (btn, { focusFirst = false } = {}) => {
     anchor = btn;
+    btn.after(panel); // วางต่อจากปุ่ม เพื่อให้กด Tab เข้าไปในรายการได้ทันที
     renderPanel('<li class="notif__empty">Loading...</li>');
     panel.hidden = false;
     btn.setAttribute('aria-expanded', 'true');
@@ -117,7 +122,9 @@ export function setupNotifications() {
     try {
       await load();
       await loadTitles(notifications.map((n) => n.item_id));
+      if (panel.hidden || anchor !== btn) return;
       renderList();
+      if (focusFirst) links()[0]?.focus();
     } catch (error) {
       renderPanel(`<li class="notif__empty">${escapeHtml(errorText(error, 'Unable to load notifications.'))}</li>`);
     }
@@ -129,7 +136,7 @@ export function setupNotifications() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!panel.hidden && anchor === btn) return close();
-      open(btn);
+      open(btn, { focusFirst: e.detail === 0 }); // กดด้วย Enter/Space → โฟกัสรายการแรก
     });
   });
 
@@ -154,8 +161,26 @@ export function setupNotifications() {
     window.location.href = link.getAttribute('href');
   });
 
-  document.addEventListener('click', close);
-  document.addEventListener('keydown', (e) => e.key === 'Escape' && close());
+  // ลูกศรขึ้น/ลงเลื่อนระหว่างรายการ
+  panel.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const list = links();
+    if (!list.length) return;
+    e.preventDefault();
+    const i = list.indexOf(document.activeElement);
+    const next = e.key === 'ArrowDown' ? (i + 1) % list.length : (i - 1 + list.length) % list.length;
+    list[next].focus();
+  });
+  // Tab ออกจากรายการ → ปิด
+  panel.addEventListener('focusout', (e) => {
+    if (e.relatedTarget && !panel.contains(e.relatedTarget) && !buttons.includes(e.relatedTarget)) close();
+  });
+
+  document.addEventListener('click', () => close());
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || panel.hidden) return;
+    close({ restoreFocus: panel.contains(document.activeElement) || buttons.includes(document.activeElement) });
+  });
   window.addEventListener('resize', place);
 
   load().catch(() => {

@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Feed · KORNA</title>
+    <script>
+      // ใส่ธีมก่อนหน้าแสดงผล กันหน้าขาวกะพริบในโหมดมืด
+      try {
+        if (localStorage.getItem('korna_theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch {}
+    </script>
     <link rel="stylesheet" href="../assets/css/base.css" />
     <link rel="stylesheet" href="../assets/css/feed.css" />
     <link rel="stylesheet" href="../assets/css/theme.css" />
@@ -65,7 +71,7 @@
 
         <nav class="toolbar__actions" aria-label="เมนูผู้ใช้">
           <button class="icon-btn" type="button" aria-label="การแจ้งเตือน" data-notifications><i data-icon="bell"></i></button>
-          <a class="icon-btn" href="./profile.html" aria-label="โปรไฟล์"><i data-icon="user"></i></a>
+          <a class="icon-btn" href="./profile.html" aria-label="โปรไฟล์" id="profile-link"><i data-icon="user"></i></a>
         </nav>
       </header>
 
@@ -91,46 +97,45 @@
         <div class="modal__body">
           <label class="soft-input">
             <i data-icon="send"></i>
-            <input name="title" maxlength="200" placeholder="Create item’s name." aria-label="ชื่อสิ่งของ" required />
+            <input name="title" maxlength="200" placeholder="Create item’s name." aria-label="ชื่อสิ่งของ" required autofocus />
           </label>
-          <div class="soft-input soft-input--area soft-input--outlined">
+          <p class="field-error" data-error-for="title"></p>
+          <div class="soft-input soft-input--area">
             <i data-icon="pencil"></i>
             <textarea name="description" rows="2" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
-            <label class="addon" for="post-images" title="เพิ่มรูป"><i data-icon="imagePlus"></i><span class="sr-only">เพิ่มรูป</span></label>
+            <button class="addon" type="button" data-add-images="post-images" aria-label="เพิ่มรูป" title="Add photos"><i data-icon="imagePlus"></i></button>
           </div>
           <div class="modal__row">
-            <label class="soft-input select-wrap modal__row-grow">
-              <select name="category_id" aria-label="หมวดหมู่" required>
-                <option value="">Category</option>
-              </select>
-            </label>
-            <label class="soft-input select-wrap">
-              <select name="type" id="post-type" aria-label="ประเภท" required>
-                <option value="">Type</option>
-                <option value="free">Free</option>
-                <option value="swap">Swap</option>
-              </select>
-            </label>
-          </div>
-          <label class="soft-input" id="desired-field" hidden>
-            <i data-icon="swap"></i>
-            <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
-          </label>
-          <input type="file" id="post-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
-          <div class="uploader" data-input="post-images">
-            <label class="uploader__empty" for="post-images">
-              <i data-icon="image"></i>
-              <span>เพิ่มรูปได้สูงสุด 5 รูป (JPG, PNG, WebP ไม่เกิน 5 MB)</span>
-            </label>
-            <div class="uploader__viewer" hidden>
-              <img alt="" />
-              <span class="uploader__count"></span>
-              <button type="button" class="uploader__remove" data-uploader-remove aria-label="ลบรูปนี้"><i data-icon="close"></i></button>
+            <div class="modal__col modal__row-grow">
+              <label class="soft-input select-wrap">
+                <select name="category_id" aria-label="หมวดหมู่" required>
+                  <option value="">Category</option>
+                </select>
+              </label>
+              <p class="field-error" data-error-for="category_id"></p>
             </div>
-            <button type="button" class="uploader__nav uploader__nav--prev" data-uploader-prev aria-label="รูปก่อนหน้า"><i data-icon="chevronRight"></i></button>
-            <button type="button" class="uploader__nav uploader__nav--next" data-uploader-next aria-label="รูปถัดไป"><i data-icon="chevronRight"></i></button>
-            <p class="uploader__error" role="alert"></p>
+            <div class="modal__col">
+              <label class="soft-input select-wrap">
+                <select name="type" id="post-type" aria-label="ประเภท" required>
+                  <option value="">Type</option>
+                  <option value="free">Free</option>
+                  <option value="swap">Swap</option>
+                </select>
+              </label>
+              <p class="field-error" data-error-for="type"></p>
+            </div>
           </div>
+          <div class="modal__col" id="desired-field" hidden>
+            <label class="soft-input">
+              <i data-icon="swap"></i>
+              <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
+            </label>
+            <p class="field-error" data-error-for="desired_description"></p>
+          </div>
+          <input type="file" id="post-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <div class="uploader" data-input="post-images" data-hint="Optional · up to 5 images (JPG, PNG, WebP)"></div>
+        </div>
+        <div class="modal__footer">
           <p class="modal__message" id="create-post-message" role="alert"></p>
           <button class="btn btn--primary btn--block" type="submit">Post</button>
         </div>
@@ -160,8 +165,10 @@
           <p class="modal__item" data-request-item></p>
           <label class="soft-input soft-input--area">
             <i data-icon="send"></i>
-            <textarea name="message" rows="3" placeholder="request something..." aria-label="ข้อความถึงเจ้าของ"></textarea>
+            <textarea name="message" rows="3" placeholder="request something..." aria-label="ข้อความถึงเจ้าของ" autofocus></textarea>
           </label>
+        </div>
+        <div class="modal__footer">
           <p class="modal__message" id="request-give-message" role="alert"></p>
           <button class="btn btn--primary btn--block" type="submit">Send</button>
         </div>
@@ -179,28 +186,18 @@
           <p class="modal__item" data-request-item></p>
           <label class="soft-input">
             <i data-icon="send"></i>
-            <input name="message" placeholder="Send message." aria-label="ข้อความถึงเจ้าของ" />
+            <input name="message" placeholder="Send message." aria-label="ข้อความถึงเจ้าของ" autofocus />
           </label>
           <div class="soft-input">
             <i data-icon="file"></i>
-            <input name="offer_description" placeholder="description" aria-label="รายละเอียดของที่เสนอแลก" required />
-            <label class="addon" for="offer-images" title="เพิ่มรูป"><i data-icon="imagePlus"></i><span class="sr-only">เพิ่มรูป</span></label>
+            <input name="offer_description" placeholder="Describe the item you offer" aria-label="รายละเอียดของที่เสนอแลก" required />
+            <button class="addon" type="button" data-add-images="offer-images" aria-label="เพิ่มรูป" title="Add photos"><i data-icon="imagePlus"></i></button>
           </div>
+          <p class="field-error" data-error-for="offer_description"></p>
           <input type="file" id="offer-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
-          <div class="uploader" data-input="offer-images">
-            <label class="uploader__empty" for="offer-images">
-              <i data-icon="image"></i>
-              <span>รูปของที่เสนอแลก (ไม่บังคับ) สูงสุด 5 รูป</span>
-            </label>
-            <div class="uploader__viewer" hidden>
-              <img alt="" />
-              <span class="uploader__count"></span>
-              <button type="button" class="uploader__remove" data-uploader-remove aria-label="ลบรูปนี้"><i data-icon="close"></i></button>
-            </div>
-            <button type="button" class="uploader__nav uploader__nav--prev" data-uploader-prev aria-label="รูปก่อนหน้า"><i data-icon="chevronRight"></i></button>
-            <button type="button" class="uploader__nav uploader__nav--next" data-uploader-next aria-label="รูปถัดไป"><i data-icon="chevronRight"></i></button>
-            <p class="uploader__error" role="alert"></p>
-          </div>
+          <div class="uploader" data-input="offer-images" data-hint="Optional · photos of your item, up to 5"></div>
+        </div>
+        <div class="modal__footer">
           <p class="modal__message" id="request-swap-message" role="alert"></p>
           <button class="btn btn--primary btn--block" type="submit">Send</button>
         </div>

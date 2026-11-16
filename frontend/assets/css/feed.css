@@ -1,31 +1,32 @@
 .feed {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 49px 33px 40px;
+  padding: 40px 33px 48px;
 }
 
 /* ---------- Toolbar ---------- */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  margin-bottom: 32px;
+  gap: var(--space-3);
+  margin-bottom: 28px;
 }
 
 .toolbar__create {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
-  width: 240px;
-  height: 58px;
-  padding: 0 var(--space-6);
-  border: 1px solid #f5df9a;
+  gap: var(--space-3);
+  height: 52px;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-primary-border);
   border-radius: var(--radius-lg);
   background: var(--color-primary);
-  color: var(--color-brown);
-  font-size: var(--fs-lg);
-  font-weight: 600;
+  color: var(--color-on-primary);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
   flex: none;
+  transition: background-color var(--ease);
 }
 
 .toolbar__create:hover {
@@ -33,22 +34,34 @@
 }
 
 .toolbar__create .icon {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
 }
 
 .toolbar__search {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   width: 240px;
-  height: 58px;
-  padding: 0 var(--space-6);
+  height: 52px;
+  padding: 0 var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  color: var(--color-brown-2);
+  color: var(--color-text-muted);
   flex: none;
+  cursor: text;
+  transition: border-color var(--ease);
+}
+
+.toolbar__search:hover {
+  border-color: var(--color-border-strong);
+}
+
+.toolbar__search:focus-within {
+  border-color: var(--color-text-muted);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .toolbar__search input {
@@ -57,41 +70,63 @@
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: var(--fs-lg);
-  color: var(--color-brown);
+  font-size: var(--fs-md);
+  color: var(--color-text);
 }
 
-.toolbar__search input::placeholder {
-  color: var(--color-brown-2);
+.toolbar__search input::-webkit-search-cancel-button {
+  cursor: pointer;
 }
 
 .filters {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
+  min-width: 0;
 }
 
+/* ตัวกรองแบบ .filter-select ของ Admin */
 .pill {
   position: relative;
   display: inline-flex;
   align-items: center;
-  height: 46px;
-  border: 0;
-  border-radius: var(--radius-pill);
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
-  color: var(--color-brown);
-  font-size: var(--fs-md);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
   font-weight: 600;
   white-space: nowrap;
+  transition:
+    background-color var(--ease),
+    border-color var(--ease);
+}
+
+.pill:hover {
+  background: var(--color-hover);
+  border-color: var(--color-border-strong);
+}
+
+.pill:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.pill.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary-border);
+  color: var(--color-on-primary);
 }
 
 .pill select {
   appearance: none;
-  max-width: 190px;
+  max-width: 180px;
   height: 100%;
-  padding: 0 40px 0 var(--space-4);
+  padding: 0 34px 0 var(--space-3);
   border: 0;
   border-radius: inherit;
+  outline: 0;
   background: transparent;
   font-weight: 600;
   color: inherit;
@@ -100,7 +135,7 @@
 
 .pill__chevron {
   position: absolute;
-  right: 14px;
+  right: 12px;
   width: 14px;
   height: 14px;
   pointer-events: none;
@@ -110,29 +145,43 @@
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
 }
 
 .view-toggle button {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 34px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--color-brown-2);
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--ease),
+    color var(--ease);
+}
+
+.view-toggle button:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
 }
 
 .view-toggle button[aria-pressed='true'] {
   background: var(--color-primary);
-  color: var(--color-brown);
+  color: var(--color-on-primary);
+}
+
+.view-toggle .icon {
+  width: 18px;
+  height: 18px;
 }
 
 .toolbar__actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-left: auto;
 }
 
@@ -148,7 +197,7 @@
 .feed__status {
   padding: var(--space-10);
   text-align: center;
-  color: var(--color-brown-2);
+  color: var(--color-text-muted);
 }
 
 .feed__status--error {
@@ -162,14 +211,15 @@
 }
 
 .feed__more .btn {
-  height: 44px;
+  height: 40px;
   min-width: 180px;
+  font-size: var(--fs-sm);
 }
 
 /* ---------- การ์ดโพสต์ ---------- */
 .cards {
   display: grid;
-  gap: 25px;
+  gap: 22px;
 }
 
 .cards--grid {
@@ -178,8 +228,8 @@
 
 .cards--list {
   grid-template-columns: 1fr;
-  gap: 17px;
-  max-width: 760px; /* แบบรายการ: คอลัมน์เดียวตรงกลาง รูปจะได้ไม่ยืดเต็มจอ */
+  gap: 18px;
+  max-width: 760px; /* แบบรายการ: คอลัมน์เดียวตรงกลาง */
   margin: 0 auto;
 }
 
@@ -187,33 +237,26 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: 22px 19px 22px;
+  gap: var(--space-3);
+  padding: 18px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--color-surface);
+  transition:
+    border-color var(--ease),
+    box-shadow var(--ease);
+}
+
+.card:hover,
+.card:focus-within {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card);
 }
 
 .card__header {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.avatar {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--color-brown);
-  color: var(--color-on-brown);
-  flex: none;
-}
-
-.avatar .icon {
-  width: 16px;
-  height: 16px;
 }
 
 .card__meta {
@@ -224,129 +267,120 @@
 .card__name {
   font-size: var(--fs-md);
   font-weight: 600;
-  color: var(--color-brown);
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.card__name span {
-  margin-left: 2px;
 }
 
 .card__caption {
-  font-size: var(--fs-md);
-  color: var(--color-brown-2);
+  margin-top: 1px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.card__media {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 402 / 180;
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  background: var(--color-muted);
-  color: var(--color-brown-2);
-  overflow: hidden;
-  width: 100%;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  transition: filter 0.15s ease;
+.card__header .status {
+  flex: none;
 }
 
-.card__media:hover {
-  filter: brightness(0.97);
+/* รูปปก: แสดงทั้งรูป (contain) บนพื้นรูปเดียวกันแบบเบลอ ไม่ยืด ไม่โดนตัด */
+.card__media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-muted);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  font: inherit;
+  isolation: isolate;
 }
 
 .card__media img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-width: none;
+  object-fit: contain;
+  transition: transform 0.25s ease;
 }
 
-.card__media .icon {
-  width: 72px;
-  height: 72px;
-  stroke-width: 2.2;
+.card__media .card__media-bg {
+  z-index: -1;
+  object-fit: cover;
+  filter: blur(18px) saturate(1.1);
+  opacity: 0.45;
+  transform: scale(1.15);
+}
+
+.card__media:hover img:not(.card__media-bg) {
+  transform: scale(1.03);
+}
+
+.card__media:focus-visible {
+  outline-offset: 3px;
+}
+
+.card__media > .icon {
+  width: 64px;
+  height: 64px;
+  stroke-width: 1.6;
+}
+
+.card__type {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-scrim);
+  color: var(--color-on-scrim);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.card__type .icon {
+  width: 12px;
+  height: 12px;
 }
 
 .cards--list .card__media {
   aspect-ratio: 16 / 9;
 }
 
-.cards--list .card__media .icon {
-  width: 120px;
-  height: 120px;
+.cards--list .card__media > .icon {
+  width: 96px;
+  height: 96px;
 }
 
 .cards--list .avatar {
-  width: 56px;
-  height: 56px;
-}
-
-.cards--list .avatar .icon {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
 }
 
 .card__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  min-height: 36px;
+  justify-content: center;
 }
 
-.card__request[disabled] {
-  opacity: 0.55;
-  cursor: not-allowed;
+.card__request {
+  min-width: 132px;
 }
 
-/* ---------- Modal เพิ่มเติมของหน้า feed ---------- */
-.modal__row {
-  display: flex;
-  gap: 10px;
+.card__state {
+  font-weight: 400;
+  color: var(--color-text-muted);
 }
-
-.modal__row-grow {
-  flex: 1;
-}
-
-.modal__row .soft-input {
-  height: 48px;
-}
-
-.modal__row .soft-input select {
-  padding-right: 30px;
-  font-size: 19px;
-}
-
-.soft-input--outlined {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3) var(--space-4);
-}
-
-.modal__item {
-  font-size: var(--fs-sm);
-  color: var(--color-brown-2);
-}
-
-.modal__item:empty {
-  display: none;
-}
-
-.modal__message {
-  font-size: var(--fs-sm);
-  color: var(--color-danger);
-}
-
-.modal__message:empty {
-  display: none;
-}
-

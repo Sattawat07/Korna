@@ -4,7 +4,16 @@ import { escapeHtml, formatDate, itemStatusLabel, requestStatusLabel } from '../
 import { setupNotifications } from '../shared/notifications.js';
 import { errorText, goToLogin, loadMe } from '../shared/session.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
-import { imageViewer, openModal, setupModals } from '../shared/ui.js';
+import { checkSourceFile, openCropper } from '../shared/cropper.js';
+import {
+  clearErrorOnInput,
+  clearFieldErrors,
+  imageViewer,
+  openModal,
+  setupModals,
+  showFieldErrors,
+  toast,
+} from '../shared/ui.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -107,12 +116,28 @@ function renderStats() {
 function bindTabs() {
   $('tab-items').addEventListener('click', () => selectTab('items'));
   $('tab-activity').addEventListener('click', () => selectTab('activity'));
+  // ลูกศรซ้าย/ขวา (หรือ Home/End) สลับแท็บได้ ตามรูปแบบ tablist มาตรฐาน
+  document.querySelector('.tabs').addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    let next = tab === 'items' ? 'activity' : 'items';
+    if (event.key === 'Home') next = 'items';
+    if (event.key === 'End') next = 'activity';
+    selectTab(next);
+    $(next === 'items' ? 'tab-items' : 'tab-activity').focus();
+  });
 }
 
 function selectTab(next) {
   tab = next;
-  $('tab-items').setAttribute('aria-selected', String(next === 'items'));
-  $('tab-activity').setAttribute('aria-selected', String(next === 'activity'));
+  [
+    ['tab-items', 'items'],
+    ['tab-activity', 'activity'],
+  ].forEach(([id, name]) => {
+    $(id).setAttribute('aria-selected', String(next === name));
+    $(id).tabIndex = next === name ? 0 : -1;
+  });
+  $('list').setAttribute('aria-labelledby', next === 'items' ? 'tab-items' : 'tab-activity');
   renderList();
 }
 
@@ -120,7 +145,7 @@ function showListStatus(message, isError = false) {
   const el = $('list-status');
   el.hidden = !message;
   el.textContent = message;
-  el.style.color = isError ? 'var(--color-danger)' : '';
+  el.classList.toggle('rows__empty--error', isError);
 }
 
 function thumb(url, alt) {
@@ -137,13 +162,13 @@ function itemRow(item) {
         <p class="row__title">${escapeHtml(item.title)}</p>
         <p class="row__sub">${escapeHtml(item.category.name)}</p>
       </div>
-      <div class="row__person"><span class="avatar">${icon('user')}</span>${count} request${count === 1 ? '' : 's'}</div>
+      <div class="row__person"><span class="avatar">${icon('users')}</span>${count} request${count === 1 ? '' : 's'}</div>
       <div class="row__status"><span class="status status--${item.status}">${itemStatusLabel(item)}</span></div>
       <span class="row__date">${formatDate(item.created_at)}</span>
       <div class="row__actions">
-        <button class="btn btn--outline" type="button" data-view-item="${item.id}">View details</button>
-        <button class="btn btn--outline" type="button" data-edit-item="${item.id}" ${canDelete ? '' : 'disabled title="Only available posts can be edited"'}>Edit</button>
-        <button class="btn btn--outline" type="button" data-delete="${item.id}" ${canDelete ? '' : 'disabled title="Only available posts can be deleted"'}>Delete</button>
+        <button class="btn btn--outline" type="button" data-view-item="${item.id}" aria-label="View details: ${escapeHtml(item.title)}">View details</button>
+        <button class="btn btn--outline" type="button" data-edit-item="${item.id}" aria-label="Edit: ${escapeHtml(item.title)}" ${canDelete ? '' : 'disabled title="Only available posts can be edited"'}>Edit</button>
+        <button class="btn btn--outline btn--danger" type="button" data-delete="${item.id}" aria-label="Delete: ${escapeHtml(item.title)}" ${canDelete ? '' : 'disabled title="Only available posts can be deleted"'}>Delete</button>
       </div>
     </li>`;
 }
@@ -164,7 +189,7 @@ function requestRow(req) {
       <div class="row__status"><span class="status status--${req.status}">${requestStatusLabel(req.status)}</span></div>
       <span class="row__date">${formatDate(req.created_at)}</span>
       <div class="row__actions">
-        <button class="btn btn--outline" type="button" data-view-request="${req.id}">View details</button>
+        <button class="btn btn--outline" type="button" data-view-request="${req.id}" aria-label="View details: ${escapeHtml(req.item.title)}">View details</button>
       </div>
     </li>`;
 }
@@ -194,17 +219,20 @@ function bindEditProfile() {
       form.elements.namedItem('room_number').value = me.room_number;
       form.elements.namedItem('phone_number').value = me.phone_number ?? '';
       message.textContent = '';
+      clearFieldErrors(form);
     });
   });
+  clearErrorOnInput(form);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const name = form.elements.namedItem('name').value.trim();
     const room = form.elements.namedItem('room_number').value.trim();
     const phone = form.elements.namedItem('phone_number').value.trim();
-    if (!name || !room) {
-      message.textContent = 'Please enter your name and room number.';
-      return;
-    }
+    const errors = {};
+    if (!name) errors.name = 'Please enter your name.';
+    if (!room) errors.room_number = 'Please enter your room number.';
+    message.textContent = '';
+    if (showFieldErrors(form, errors)) return;
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.textContent = 'Saving...';
@@ -216,7 +244,9 @@ function bindEditProfile() {
       me = data.user;
       renderMe();
       dialog.close();
+      toast('Profile saved.');
     } catch (error) {
+      if (error.details && typeof error.details === 'object') showFieldErrors(form, error.details);
       message.textContent = errorText(error, 'Unable to save your profile. Please try again.');
     } finally {
       btn.disabled = false;
@@ -248,6 +278,7 @@ function bindDelete() {
       $('delete-modal').close();
       renderList();
       refreshStats();
+      toast('Post deleted.');
     } catch (error) {
       $('delete-message').textContent = errorText(error, 'Unable to delete this post. Please try again.');
     } finally {
@@ -258,9 +289,6 @@ function bindDelete() {
 }
 
 // ---------- รูปโปรไฟล์: PUT /api/me/avatar (multipart ฟิลด์ avatar) ----------
-const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
-
 function renderAvatar() {
   const box = $('avatar');
   if (me?.avatar_url) {
@@ -282,23 +310,32 @@ function bindAvatar() {
     const file = input.files?.[0];
     input.value = '';
     if (!file || !me) return;
-    if (!AVATAR_TYPES.includes(file.type)) {
-      error.textContent = 'Use a JPG, PNG or WebP image.';
-      return;
-    }
-    if (file.size > AVATAR_MAX_SIZE) {
-      error.textContent = 'The image must be 5 MB or smaller.';
+    const problem = checkSourceFile(file);
+    if (problem) {
+      error.textContent = problem;
       return;
     }
     error.textContent = '';
+    // เลือกส่วนของรูปที่จะแสดงในวงกลมก่อนอัปโหลด
+    let cropped;
+    try {
+      cropped = await openCropper(file, { aspect: 1, circle: true, maxSide: 800, title: 'Adjust profile picture' });
+    } catch (err) {
+      error.textContent = err.message;
+      return;
+    } finally {
+      editBtn.focus();
+    }
+    if (!cropped) return;
     const body = new FormData();
-    body.append('avatar', file);
+    body.append('avatar', cropped);
     editBtn.disabled = true;
     $('avatar').classList.add('is-uploading');
     try {
       const data = await request('/me/avatar', { method: 'PUT', body });
       me = { ...me, avatar_url: data.avatar_url };
       renderAvatar();
+      toast('Profile picture updated.');
     } catch (err) {
       error.textContent = errorText(err, 'Unable to upload the picture. Please try again.');
     } finally {
@@ -391,7 +428,7 @@ async function showMyItem(id) {
     reqs = data.requests;
   } catch (error) {
     if (openItemId !== id) return;
-    $('details-body').innerHTML = `${base}<p class="details-label details-label--section">Requests</p><p class="details-text" style="color: var(--color-danger)">${escapeHtml(errorText(error, 'Unable to load requests.'))}</p>`;
+    $('details-body').innerHTML = `${base}<p class="details-label details-label--section">Requests</p><p class="details-text details-text--error">${escapeHtml(errorText(error, 'Unable to load requests.'))}</p>`;
     return;
   }
   if (openItemId !== id) return;
@@ -443,6 +480,7 @@ async function decide(requestId, decision, btn) {
     myItems = data.items;
     renderList();
     refreshStats();
+    toast(decision === 'accepted' ? 'Request accepted.' : 'Request declined.');
     if (itemId != null) await showMyItem(itemId);
   } catch (error) {
     buttons.forEach((b) => (b.disabled = false));
@@ -464,6 +502,7 @@ async function loadCategories() {
 function bindEditItem() {
   const form = $('edit-item-form');
   const message = $('edit-item-message');
+  clearErrorOnInput(form);
 
   $('list').addEventListener('click', async (event) => {
     const btn = event.target.closest('[data-edit-item]');
@@ -472,6 +511,7 @@ function bindEditItem() {
     if (!item) return;
     editingId = item.id;
     message.textContent = '';
+    clearFieldErrors(form);
     btn.disabled = true;
     try {
       const list = await loadCategories();
@@ -498,14 +538,11 @@ function bindEditItem() {
     const description = form.elements.namedItem('description').value.trim();
     const categoryId = Number(form.elements.namedItem('category_id').value);
     const desired = form.elements.namedItem('desired_description').value.trim();
-    if (!title) {
-      message.textContent = 'Please enter the item name.';
-      return;
-    }
-    if (item.type === 'swap' && !desired) {
-      message.textContent = 'Please describe what you want in exchange.';
-      return;
-    }
+    const errors = {};
+    if (!title) errors.title = 'Please enter the item name.';
+    if (item.type === 'swap' && !desired) errors.desired_description = 'Please describe what you want in exchange.';
+    message.textContent = '';
+    if (showFieldErrors(form, errors)) return;
     // ส่งเฉพาะฟิลด์ที่เปลี่ยน — โพสต์ free ห้ามส่งฟิลด์ swap
     const body = {};
     if (title !== item.title) body.title = title;
@@ -524,7 +561,9 @@ function bindEditItem() {
       myItems = myItems.map((i) => (i.id === item.id ? { ...data.item, requests_count: i.requests_count } : i));
       renderList();
       $('edit-item-modal').close();
+      toast('Post updated.');
     } catch (error) {
+      if (error.details && typeof error.details === 'object') showFieldErrors(form, error.details);
       message.textContent = errorText(error, 'Unable to save the post. Please try again.');
     } finally {
       btn.disabled = false;

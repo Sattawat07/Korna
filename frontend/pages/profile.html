@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile · KORNA</title>
+    <script>
+      // ใส่ธีมก่อนหน้าแสดงผล กันหน้าขาวกะพริบในโหมดมืด
+      try {
+        if (localStorage.getItem('korna_theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch {}
+    </script>
     <link rel="stylesheet" href="../assets/css/base.css" />
     <link rel="stylesheet" href="../assets/css/profile.css" />
     <link rel="stylesheet" href="../assets/css/theme.css" />
@@ -32,14 +38,8 @@
         <aside class="profile__side">
           <section class="panel identity">
             <div class="identity__avatar-wrap">
-              <span class="identity__avatar" id="avatar"><i data-icon="user"></i></span>
-              <button
-                class="identity__edit"
-                type="button"
-                id="avatar-edit"
-                aria-label="เปลี่ยนรูปโปรไฟล์"
-                title="Change profile picture"
-              >
+              <span class="avatar identity__avatar" id="avatar"><i data-icon="user"></i></span>
+              <button class="identity__edit" type="button" id="avatar-edit" aria-label="เปลี่ยนรูปโปรไฟล์" title="Change profile picture">
                 <i data-icon="pencil"></i>
               </button>
               <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" hidden />
@@ -84,7 +84,7 @@
           </section>
 
           <section class="panel activity">
-            <div class="tabs" role="tablist">
+            <div class="tabs" role="tablist" aria-label="รายการของฉัน">
               <button
                 class="tabs__tab"
                 role="tab"
@@ -103,12 +103,13 @@
                 id="tab-activity"
                 aria-selected="false"
                 aria-controls="list"
+                tabindex="-1"
               >
                 Activity
               </button>
               <span class="tabs__count" id="tab-count"></span>
             </div>
-            <ul class="rows" id="list" role="tabpanel"></ul>
+            <ul class="rows" id="list" role="tabpanel" aria-labelledby="tab-items"></ul>
             <p class="rows__empty" id="list-status" role="status">Loading...</p>
           </section>
         </div>
@@ -125,16 +126,20 @@
           <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
         </div>
         <div class="modal__body">
-          <label class="soft-input"
-            ><i data-icon="user"></i><input name="name" placeholder="Name Surname" aria-label="ชื่อ" required
-          /></label>
-          <label class="soft-input"
-            ><i data-icon="room"></i><input name="room_number" placeholder="Room No." aria-label="เลขห้อง" required
-          /></label>
-          <label class="soft-input"
-            ><i data-icon="phone"></i
-            ><input name="phone_number" type="tel" placeholder="Phone Number" aria-label="เบอร์โทร"
-          /></label>
+          <label class="soft-input">
+            <i data-icon="user"></i><input name="name" maxlength="100" placeholder="Name Surname" aria-label="ชื่อ" required autocomplete="name" />
+          </label>
+          <p class="field-error" data-error-for="name"></p>
+          <label class="soft-input">
+            <i data-icon="room"></i><input name="room_number" maxlength="20" placeholder="Room No." aria-label="เลขห้อง" required />
+          </label>
+          <p class="field-error" data-error-for="room_number"></p>
+          <label class="soft-input">
+            <i data-icon="phone"></i><input name="phone_number" type="tel" maxlength="20" placeholder="Phone Number" aria-label="เบอร์โทร" autocomplete="tel" />
+          </label>
+          <p class="field-error" data-error-for="phone_number"></p>
+        </div>
+        <div class="modal__footer">
           <p class="modal__message" id="edit-message" role="alert"></p>
           <button class="btn btn--primary btn--block" type="submit">Save</button>
         </div>
@@ -153,6 +158,7 @@
             <i data-icon="send"></i>
             <input name="title" maxlength="200" placeholder="Item’s name" aria-label="ชื่อสิ่งของ" required />
           </label>
+          <p class="field-error" data-error-for="title"></p>
           <label class="soft-input soft-input--area">
             <i data-icon="pencil"></i>
             <textarea name="description" rows="3" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
@@ -160,11 +166,16 @@
           <label class="soft-input select-wrap">
             <select name="category_id" aria-label="หมวดหมู่" required></select>
           </label>
-          <label class="soft-input" id="edit-desired-field" hidden>
-            <i data-icon="swap"></i>
-            <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
-          </label>
+          <div class="modal__col" id="edit-desired-field" hidden>
+            <label class="soft-input">
+              <i data-icon="swap"></i>
+              <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
+            </label>
+            <p class="field-error" data-error-for="desired_description"></p>
+          </div>
           <p class="edit-item__note">Images and type can’t be changed after posting.</p>
+        </div>
+        <div class="modal__footer">
           <p class="modal__message" id="edit-item-message" role="alert"></p>
           <button class="btn btn--primary btn--block" type="submit">Save changes</button>
         </div>

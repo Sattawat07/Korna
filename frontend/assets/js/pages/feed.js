@@ -4,7 +4,7 @@ import { escapeHtml, itemStatusLabel } from '../shared/format.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
 import { setupNotifications } from '../shared/notifications.js';
 import { errorText, loadMe } from '../shared/session.js';
-import { openModal, setupModals, setupUploader } from '../shared/ui.js';
+import { clearErrorOnInput, clearFieldErrors, openModal, setupModals, setupUploader, showFieldErrors, toast } from '../shared/ui.js';
 
 // ---------- สถานะของหน้า ----------
 const PAGE_SIZE = 12;
@@ -22,8 +22,10 @@ const loadMoreBtn = $('load-more');
 
 hydrateIcons();
 setupModals();
-const postUploader = setupUploader(document.querySelector('.uploader[data-input="post-images"]'));
-const offerUploader = setupUploader(document.querySelector('.uploader[data-input="offer-images"]'));
+const postUploader = setupUploader(document.querySelector('.uploader[data-input="post-images"]'), { title: 'Adjust photo' });
+const offerUploader = setupUploader(document.querySelector('.uploader[data-input="offer-images"]'), {
+  title: 'Adjust photo',
+});
 restoreView();
 bindFilters();
 bindCreatePost();
@@ -34,6 +36,7 @@ async function init() {
   try {
     const [meData, categoryData] = await Promise.all([loadMe(), request('/categories')]);
     me = meData.user;
+    renderProfileLink();
     fillCategorySelects(categoryData.categories);
     await loadRequestedIds();
     setupNotifications();
@@ -52,6 +55,17 @@ async function loadRequestedIds() {
   } catch {
     /* โหลดไม่ได้ก็ยังใช้ฟีดได้ — ถ้ากดขอซ้ำ API จะตอบ 409 และปุ่มจะเปลี่ยนเป็น Requested เอง */
   }
+}
+
+/** แสดงรูปโปรไฟล์ของฉันในปุ่มโปรไฟล์มุมขวาบน */
+function renderProfileLink() {
+  const link = $('profile-link');
+  if (!link || !me?.avatar_url) return;
+  const img = document.createElement('img');
+  img.className = 'icon-btn__avatar';
+  img.src = me.avatar_url;
+  img.alt = '';
+  link.append(img);
 }
 
 function fillCategorySelects(categories) {
@@ -80,6 +94,12 @@ function bindFilters() {
       state.q = event.target.value.trim();
       loadItems({ reset: true });
     }, 300);
+  });
+  // ตัวกรองที่เลือกอยู่เป็นสีเหลือง
+  document.querySelectorAll('.filters select').forEach((select) => {
+    select.addEventListener('change', () => {
+      select.closest('.pill').classList.toggle('is-active', select.id !== 'filter-sort' && Boolean(select.value));
+    });
   });
   $('filter-category').addEventListener('change', (event) => {
     state.category_id = event.target.value;
@@ -186,9 +206,11 @@ function render() {
 function cardHtml(item) {
   const isMine = me && item.owner.id === me.id;
   const requested = requestedIds.has(item.id);
-  const media = item.image_url
-    ? `<img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}" loading="lazy" />`
+  const src = item.image_url ? escapeHtml(item.image_url) : '';
+  const media = src
+    ? `<img class="card__media-bg" src="${src}" alt="" aria-hidden="true" loading="lazy" /><img src="${src}" alt="" loading="lazy" />`
     : icon('image');
+  const typeTag = item.type === 'swap' ? `${icon('swap')}Swap` : `${icon('gift')}Free`;
   let disabledAttr = '';
   if (isMine) disabledAttr = 'disabled title="This is your post"';
   else if (requested) disabledAttr = 'disabled title="Request sent"';
@@ -197,19 +219,22 @@ function cardHtml(item) {
       <header class="card__header">
         ${avatarHtml(item.owner)}
         <div class="card__meta">
-          <p class="card__name">${escapeHtml(item.owner.name)} - <span>(${itemStatusLabel(item)})</span></p>
+          <p class="card__name">${escapeHtml(item.owner.name)} <span class="card__state">- (${itemStatusLabel(item)})</span></p>
           <p class="card__caption">${escapeHtml(item.title)}</p>
         </div>
       </header>
-      <button class="card__media" type="button" data-open-item="${item.id}" aria-label="View details of ${escapeHtml(item.title)}">${media}</button>
+      <button class="card__media" type="button" data-open-item="${item.id}" aria-label="View details of ${escapeHtml(item.title)}">
+        ${media}<span class="card__type">${typeTag}</span>
+      </button>
       <footer class="card__footer">
-        <button class="chip card__request" type="button" data-request="${item.id}" ${disabledAttr}>${requested ? 'Requested' : 'Request'}</button>
+        <button class="chip card__request" type="button" data-request="${item.id}" aria-label="${requested ? 'Requested' : 'Request'}: ${escapeHtml(item.title)}" ${disabledAttr}>${requested ? 'Requested' : 'Request'}</button>
       </footer>
     </article>`;
 }
 
 // ---------- ปุ่ม Request / กดรูปเพื่อดูรายละเอียด ----------
 let requestItem = null;
+const requestFormItemId = {}; // โพสต์ที่ฟอร์มคำขอแต่ละแบบกรอกค้างไว้
 
 cardsEl.addEventListener('click', (event) => {
   const open = event.target.closest('[data-open-item]');
@@ -223,10 +248,19 @@ cardsEl.addEventListener('click', (event) => {
 function openRequest(item) {
   requestItem = item;
   const modalId = item.type === 'swap' ? 'request-swap-modal' : 'request-give-modal';
-  const dialog = openModal(modalId);
-  const label = dialog?.querySelector('[data-request-item]');
-  if (label) label.textContent = `${item.title} · ${item.owner.name}`;
-  dialog?.querySelector('.modal__message')?.replaceChildren();
+  const dialog = document.getElementById(modalId);
+  // คำขอใหม่ทุกครั้งเริ่มจากฟอร์มว่าง ไม่ค้างข้อความของโพสต์ก่อนหน้า
+  if (requestFormItemId[modalId] !== item.id) {
+    const form = dialog.querySelector('form');
+    form.reset();
+    clearFieldErrors(form);
+    if (modalId === 'request-swap-modal') offerUploader.reset();
+    requestFormItemId[modalId] = item.id;
+  }
+  const label = dialog.querySelector('[data-request-item]');
+  label.innerHTML = `<strong>${escapeHtml(item.title)}</strong> · ${escapeHtml(item.owner.name)}`;
+  dialog.querySelector('.modal__message').textContent = '';
+  openModal(modalId);
 }
 
 // ---------- รายละเอียดโพสต์: GET /api/items/:id ----------
@@ -236,7 +270,7 @@ async function openItem(id) {
   openItemId = id;
   const summary = items.find((i) => i.id === id);
   $('item-modal-title').textContent = summary?.title ?? '';
-  $('item-modal-owner').textContent = summary ? `POSTED BY ${summary.owner.name.toUpperCase()}` : '';
+  $('item-modal-owner').textContent = summary ? `Posted by ${summary.owner.name}` : '';
   $('item-modal-body').innerHTML = '<p class="details-text">Loading...</p>';
   const dialog = $('item-modal');
   if (!dialog.open) dialog.showModal();
@@ -244,7 +278,7 @@ async function openItem(id) {
     const { item } = await request(`/items/${id}`);
     if (openItemId !== id) return;
     $('item-modal-title').textContent = item.title;
-    $('item-modal-owner').textContent = `POSTED BY ${item.owner.name.toUpperCase()}`;
+    $('item-modal-owner').textContent = `Posted by ${item.owner.name}`;
     const isMine = me && item.owner.id === me.id;
     const canRequest = !isMine && !requestedIds.has(item.id) && ['available', 'pending'].includes(item.status);
     let label = 'Request';
@@ -263,7 +297,7 @@ async function openItem(id) {
     });
   } catch (error) {
     if (openItemId !== id) return;
-    $('item-modal-body').innerHTML = `<p class="details-text" style="color: var(--color-danger)">${escapeHtml(
+    $('item-modal-body').innerHTML = `<p class="details-text details-text--error">${escapeHtml(
       errorText(error, 'Unable to load this post. Please try again.'),
     )}</p>`;
   }
@@ -290,6 +324,7 @@ function bindCreatePost() {
   const desired = $('desired-field');
   const message = $('create-post-message');
 
+  clearErrorOnInput(form);
   typeSelect.addEventListener('change', () => {
     desired.hidden = typeSelect.value !== 'swap';
   });
@@ -303,13 +338,14 @@ function bindCreatePost() {
     const description = value('description');
     const desiredDescription = value('desired_description');
 
-    const errors = [];
-    if (!title) errors.push('Please enter the item name.');
-    if (!categoryId) errors.push('Please choose a category.');
-    if (!type) errors.push('Please choose a type.');
-    if (type === 'swap' && !desiredDescription) errors.push('Please describe what you want in exchange.');
-    message.textContent = errors.join(' ');
-    if (errors.length) return;
+    const errors = {};
+    if (!title) errors.title = 'Please enter the item name.';
+    if (!categoryId) errors.category_id = 'Please choose a category.';
+    if (!type) errors.type = 'Please choose a type.';
+    if (type === 'swap' && !desiredDescription) errors.desired_description = 'Please describe what you want in exchange.';
+    message.textContent = '';
+    if (showFieldErrors(form, errors)) return;
+    if (postUploader.isBusy()) return;
 
     // ส่งเฉพาะฟิลด์ที่ API รับ — API ปฏิเสธฟิลด์ที่ไม่รู้จัก และฟิลด์ swap ในโพสต์ free
     const body = new FormData();
@@ -326,10 +362,14 @@ function bindCreatePost() {
         form.reset();
         desired.hidden = true;
         postUploader.reset();
+        clearFieldErrors(form);
         message.textContent = '';
         form.closest('dialog').close();
+        // ฟีดไม่แสดงโพสต์ของตัวเอง จึงบอกว่าไปดูได้ที่ไหน
+        toast('Your post is live. You can find it on your profile.', { href: './profile.html', label: 'View' });
         await loadItems({ reset: true });
       } catch (error) {
+        if (error.details && typeof error.details === 'object') showFieldErrors(form, error.details);
         message.textContent = errorText(error, 'Unable to create the post. Please try again.');
       }
     });
@@ -349,16 +389,16 @@ function bindRequestForms() {
   });
 
   const swap = $('request-swap-form');
+  clearErrorOnInput(swap);
   swap.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!requestItem) return;
     const messageEl = $('request-swap-message');
     const message = swap.elements.namedItem('message').value.trim();
     const offer = swap.elements.namedItem('offer_description').value.trim();
-    if (!offer) {
-      messageEl.textContent = 'Please describe the item you offer.';
-      return;
-    }
+    messageEl.textContent = '';
+    if (showFieldErrors(swap, offer ? {} : { offer_description: 'Please describe the item you offer.' })) return;
+    if (offerUploader.isBusy()) return;
     const body = new FormData();
     if (message) body.append('message', message);
     body.append('offer_description', offer);
@@ -377,11 +417,14 @@ async function sendRequest(form, messageEl, body, onSuccess) {
       await request(`/items/${item.id}/requests`, { method: 'POST', body });
       messageEl.textContent = '';
       onSuccess();
+      delete requestFormItemId[form.closest('dialog').id];
       requestedIds.add(item.id);
       // API เปลี่ยนโพสต์เป็น pending หลังมีคำขอแรก
       items = items.map((i) => (i.id === item.id ? { ...i, status: 'pending' } : i));
       render();
       form.closest('dialog').close();
+      toast(`Request sent to ${item.owner.name}.`);
+      cardsEl.querySelector(`[data-open-item="${item.id}"]`)?.focus();
     } catch (error) {
       if (error.status === 409 && error.code === 'CONFLICT') {
         requestedIds.add(item.id);
