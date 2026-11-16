@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feed · KORNA</title>
+    <link rel="stylesheet" href="../assets/css/base.css" />
+    <link rel="stylesheet" href="../assets/css/feed.css" />
+  </head>
+  <body class="feed-page">
+    <div class="feed">
+      <header class="toolbar">
+        <button class="toolbar__create" type="button" data-open-modal="create-post-modal">
+          <i data-icon="send"></i>
+          Create post...
+        </button>
+
+        <label class="toolbar__search">
+          <i data-icon="search"></i>
+          <input type="search" id="search-input" placeholder="search" aria-label="ค้นหาโพสต์" />
+        </label>
+
+        <div class="filters">
+          <label class="pill">
+            <span class="sr-only">หมวดหมู่</span>
+            <select id="filter-category">
+              <option value="">Category</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <label class="pill">
+            <span class="sr-only">ประเภทโพสต์</span>
+            <select id="filter-type">
+              <option value="">Type</option>
+              <option value="free">Free</option>
+              <option value="swap">Swap</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <label class="pill">
+            <span class="sr-only">ช่วงเวลาที่โพสต์</span>
+            <select id="filter-range">
+              <option value="">Any time</option>
+              <option value="today">Today</option>
+              <option value="7d">Last 7 days</option>
+              <option value="month">This month</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <label class="pill">
+            <span class="sr-only">เรียงลำดับ</span>
+            <select id="filter-sort">
+              <option value="newest">sort: newest</option>
+              <option value="oldest">sort: oldest</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <div class="view-toggle" role="group" aria-label="รูปแบบการแสดงผล">
+            <button type="button" data-view="grid" aria-pressed="true" aria-label="แบบตาราง"><i data-icon="grid"></i></button>
+            <button type="button" data-view="list" aria-pressed="false" aria-label="แบบรายการ"><i data-icon="list"></i></button>
+          </div>
+        </div>
+
+        <nav class="toolbar__actions" aria-label="เมนูผู้ใช้">
+          <button class="icon-btn" type="button" aria-label="การแจ้งเตือน" data-notifications><i data-icon="bell"></i></button>
+          <a class="icon-btn" href="./profile.html" aria-label="โปรไฟล์"><i data-icon="user"></i></a>
+        </nav>
+      </header>
+
+      <main>
+        <h1 class="feed__heading">Feed</h1>
+        <section class="cards cards--grid" id="cards" aria-live="polite" aria-busy="true"></section>
+        <p class="feed__status" id="feed-status" role="status">Loading...</p>
+        <div class="feed__more" id="feed-more" hidden>
+          <button class="btn btn--outline" type="button" id="load-more">Load more</button>
+        </div>
+      </main>
+
+      <footer></footer>
+    </div>
+
+    <!-- Modal: สร้างโพสต์ -->
+    <dialog class="modal" id="create-post-modal" aria-labelledby="create-post-title">
+      <form id="create-post-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="create-post-title">Create post</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <label class="soft-input">
+            <i data-icon="send"></i>
+            <input name="title" maxlength="200" placeholder="Create item’s name." aria-label="ชื่อสิ่งของ" required />
+          </label>
+          <div class="soft-input soft-input--area soft-input--outlined">
+            <i data-icon="pencil"></i>
+            <textarea name="description" rows="2" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
+            <label class="addon" for="post-images" title="เพิ่มรูป"><i data-icon="imagePlus"></i><span class="sr-only">เพิ่มรูป</span></label>
+          </div>
+          <div class="modal__row">
+            <label class="soft-input select-wrap modal__row-grow">
+              <select name="category_id" aria-label="หมวดหมู่" required>
+                <option value="">Category</option>
+              </select>
+            </label>
+            <label class="soft-input select-wrap">
+              <select name="type" id="post-type" aria-label="ประเภท" required>
+                <option value="">Type</option>
+                <option value="free">Free</option>
+                <option value="swap">Swap</option>
+              </select>
+            </label>
+          </div>
+          <label class="soft-input" id="desired-field" hidden>
+            <i data-icon="swap"></i>
+            <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
+          </label>
+          <input type="file" id="post-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <div class="uploader" data-input="post-images">
+            <label class="uploader__empty" for="post-images">
+              <i data-icon="image"></i>
+              <span>เพิ่มรูปได้สูงสุด 5 รูป (JPG, PNG, WebP ไม่เกิน 5 MB)</span>
+            </label>
+            <div class="uploader__viewer" hidden>
+              <img alt="" />
+              <span class="uploader__count"></span>
+              <button type="button" class="uploader__remove" data-uploader-remove aria-label="ลบรูปนี้"><i data-icon="close"></i></button>
+            </div>
+            <button type="button" class="uploader__nav uploader__nav--prev" data-uploader-prev aria-label="รูปก่อนหน้า"><i data-icon="chevronRight"></i></button>
+            <button type="button" class="uploader__nav uploader__nav--next" data-uploader-next aria-label="รูปถัดไป"><i data-icon="chevronRight"></i></button>
+            <p class="uploader__error" role="alert"></p>
+          </div>
+          <p class="modal__message" id="create-post-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Post</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Modal: รายละเอียดโพสต์ -->
+    <dialog class="modal modal--details" id="item-modal" aria-labelledby="item-modal-title">
+      <div class="modal__header">
+        <div>
+          <p class="details-modal__eyebrow" id="item-modal-owner"></p>
+          <h2 class="modal__title" id="item-modal-title"></h2>
+        </div>
+        <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+      </div>
+      <div class="details-modal__body" id="item-modal-body"></div>
+    </dialog>
+
+    <!-- Modal: ขอรับของฟรี -->
+    <dialog class="modal" id="request-give-modal" aria-labelledby="request-give-title">
+      <form id="request-give-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="request-give-title">Request</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <p class="modal__item" data-request-item></p>
+          <label class="soft-input soft-input--area">
+            <i data-icon="send"></i>
+            <textarea name="message" rows="3" placeholder="request something..." aria-label="ข้อความถึงเจ้าของ"></textarea>
+          </label>
+          <p class="modal__message" id="request-give-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Send</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Modal: เสนอแลก -->
+    <dialog class="modal" id="request-swap-modal" aria-labelledby="request-swap-title">
+      <form id="request-swap-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="request-swap-title">Request</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <p class="modal__item" data-request-item></p>
+          <label class="soft-input">
+            <i data-icon="send"></i>
+            <input name="message" placeholder="Send message." aria-label="ข้อความถึงเจ้าของ" />
+          </label>
+          <div class="soft-input">
+            <i data-icon="file"></i>
+            <input name="offer_description" placeholder="description" aria-label="รายละเอียดของที่เสนอแลก" required />
+            <label class="addon" for="offer-images" title="เพิ่มรูป"><i data-icon="imagePlus"></i><span class="sr-only">เพิ่มรูป</span></label>
+          </div>
+          <input type="file" id="offer-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <div class="uploader" data-input="offer-images">
+            <label class="uploader__empty" for="offer-images">
+              <i data-icon="image"></i>
+              <span>รูปของที่เสนอแลก (ไม่บังคับ) สูงสุด 5 รูป</span>
+            </label>
+            <div class="uploader__viewer" hidden>
+              <img alt="" />
+              <span class="uploader__count"></span>
+              <button type="button" class="uploader__remove" data-uploader-remove aria-label="ลบรูปนี้"><i data-icon="close"></i></button>
+            </div>
+            <button type="button" class="uploader__nav uploader__nav--prev" data-uploader-prev aria-label="รูปก่อนหน้า"><i data-icon="chevronRight"></i></button>
+            <button type="button" class="uploader__nav uploader__nav--next" data-uploader-next aria-label="รูปถัดไป"><i data-icon="chevronRight"></i></button>
+            <p class="uploader__error" role="alert"></p>
+          </div>
+          <p class="modal__message" id="request-swap-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Send</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../assets/js/pages/feed.js"></script>
+  </body>
+</html>

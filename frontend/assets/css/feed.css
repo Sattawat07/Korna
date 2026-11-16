@@ -1,0 +1,352 @@
+.feed {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 49px 33px 40px;
+}
+
+/* ---------- Toolbar ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: 32px;
+}
+
+.toolbar__create {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 240px;
+  height: 58px;
+  padding: 0 var(--space-6);
+  border: 1px solid #f5df9a;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: var(--color-brown);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  flex: none;
+}
+
+.toolbar__create:hover {
+  background: var(--color-primary-hover);
+}
+
+.toolbar__create .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 240px;
+  height: 58px;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-brown-2);
+  flex: none;
+}
+
+.toolbar__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: var(--fs-lg);
+  color: var(--color-brown);
+}
+
+.toolbar__search input::placeholder {
+  color: var(--color-brown-2);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-brown);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill select {
+  appearance: none;
+  max-width: 190px;
+  height: 100%;
+  padding: 0 40px 0 var(--space-4);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pill__chevron {
+  position: absolute;
+  right: 14px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+}
+
+.view-toggle button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-brown-2);
+}
+
+.view-toggle button[aria-pressed='true'] {
+  background: var(--color-primary);
+  color: var(--color-brown);
+}
+
+.toolbar__actions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+/* ---------- หัวข้อ (ซ่อนจากสายตา แต่โปรแกรมอ่านหน้าจอยังอ่านได้) ---------- */
+.feed__heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.feed__status {
+  padding: var(--space-10);
+  text-align: center;
+  color: var(--color-brown-2);
+}
+
+.feed__status--error {
+  color: var(--color-danger);
+}
+
+.feed__more {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.feed__more .btn {
+  height: 44px;
+  min-width: 180px;
+}
+
+/* ---------- การ์ดโพสต์ ---------- */
+.cards {
+  display: grid;
+  gap: 25px;
+}
+
+.cards--grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cards--list {
+  grid-template-columns: 1fr;
+  gap: 17px;
+  max-width: 760px; /* แบบรายการ: คอลัมน์เดียวตรงกลาง รูปจะได้ไม่ยืดเต็มจอ */
+  margin: 0 auto;
+}
+
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 22px 19px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-brown);
+  color: var(--color-on-brown);
+  flex: none;
+}
+
+.avatar .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.card__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.card__name {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--color-brown);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__name span {
+  margin-left: 2px;
+}
+
+.card__caption {
+  font-size: var(--fs-md);
+  color: var(--color-brown-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__media {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 402 / 180;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-muted);
+  color: var(--color-brown-2);
+  overflow: hidden;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.card__media:hover {
+  filter: brightness(0.97);
+}
+
+.card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card__media .icon {
+  width: 72px;
+  height: 72px;
+  stroke-width: 2.2;
+}
+
+.cards--list .card__media {
+  aspect-ratio: 16 / 9;
+}
+
+.cards--list .card__media .icon {
+  width: 120px;
+  height: 120px;
+}
+
+.cards--list .avatar {
+  width: 56px;
+  height: 56px;
+}
+
+.cards--list .avatar .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 36px;
+}
+
+.card__request[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------- Modal เพิ่มเติมของหน้า feed ---------- */
+.modal__row {
+  display: flex;
+  gap: 10px;
+}
+
+.modal__row-grow {
+  flex: 1;
+}
+
+.modal__row .soft-input {
+  height: 48px;
+}
+
+.modal__row .soft-input select {
+  padding-right: 30px;
+  font-size: 19px;
+}
+
+.soft-input--outlined {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.modal__item {
+  font-size: var(--fs-sm);
+  color: var(--color-brown-2);
+}
+
+.modal__item:empty {
+  display: none;
+}
+
+.modal__message {
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+}
+
+.modal__message:empty {
+  display: none;
+}
+

@@ -59,9 +59,8 @@ form.addEventListener('submit', async (event) => {
       method: 'POST',
       body: { email, password, remember_me: rememberMe },
     });
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Sign in';
-    alert('Login successful. Welcome ' + result.user.name);
+    // ล็อกอินสำเร็จ → ไปหน้า Feed (ปุ่มยังปิดอยู่ระหว่างเปลี่ยนหน้า กันกดซ้ำ)
+    if (result.user) window.location.href = './feed.html';
   } catch (error) {
     if (error.status === 401 && error.code === 'INVALID_CREDENTIALS') {
       errorContainer.textContent = 'Invalid email or password.';

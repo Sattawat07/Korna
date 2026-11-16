@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile · KORNA</title>
+    <link rel="stylesheet" href="../assets/css/base.css" />
+    <link rel="stylesheet" href="../assets/css/profile.css" />
+  </head>
+  <body class="profile-page">
+    <div class="profile">
+      <header class="profile__header">
+        <div>
+          <p class="profile__eyebrow">Profile overview</p>
+          <h1 class="profile__title">Profile</h1>
+        </div>
+        <nav class="profile__actions" aria-label="เมนูผู้ใช้">
+          <button class="icon-btn" type="button" id="logout-btn" aria-label="ออกจากระบบ">
+            <i data-icon="logout"></i>
+          </button>
+          <button class="icon-btn" type="button" aria-label="การแจ้งเตือน" data-notifications>
+            <i data-icon="bell"></i>
+          </button>
+          <a class="icon-btn" href="./feed.html" aria-label="หน้าแรก"><i data-icon="home"></i></a>
+        </nav>
+      </header>
+
+      <main class="profile__layout">
+        <aside class="profile__side">
+          <section class="panel identity">
+            <div class="identity__avatar-wrap">
+              <span class="identity__avatar" id="avatar"><i data-icon="user"></i></span>
+              <button
+                class="identity__edit"
+                type="button"
+                id="avatar-edit"
+                aria-label="เปลี่ยนรูปโปรไฟล์"
+                title="Change profile picture"
+              >
+                <i data-icon="pencil"></i>
+              </button>
+              <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" hidden />
+            </div>
+            <p class="identity__error" id="avatar-error" role="alert"></p>
+            <h2 class="identity__name" id="me-name">Loading...</h2>
+          </section>
+
+          <section class="panel details" aria-labelledby="details-title">
+            <div class="details__head">
+              <h2 id="details-title">Profile</h2>
+              <button class="chip" type="button" data-open-modal="edit-profile-modal">Edit Profile</button>
+            </div>
+            <dl class="details__list">
+              <div>
+                <dt>Room No.</dt>
+                <dd id="me-room">-</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd id="me-phone">-</dd>
+              </div>
+              <div>
+                <dt>Mail</dt>
+                <dd id="me-email">-</dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+
+        <div class="profile__main">
+          <section class="stats" aria-label="สรุป">
+            <div class="stat">
+              <span class="stat__value" id="stat-items">-</span><span class="stat__label">My items</span>
+            </div>
+            <div class="stat">
+              <span class="stat__value" id="stat-sent">-</span><span class="stat__label">Requests sent</span>
+            </div>
+            <div class="stat">
+              <span class="stat__value" id="stat-done">-</span><span class="stat__label">Exchanged</span>
+            </div>
+          </section>
+
+          <section class="panel activity">
+            <div class="tabs" role="tablist">
+              <button
+                class="tabs__tab"
+                role="tab"
+                type="button"
+                id="tab-items"
+                aria-selected="true"
+                aria-controls="list"
+              >
+                My Item
+              </button>
+              <span class="tabs__sep" aria-hidden="true"></span>
+              <button
+                class="tabs__tab"
+                role="tab"
+                type="button"
+                id="tab-activity"
+                aria-selected="false"
+                aria-controls="list"
+              >
+                Activity
+              </button>
+              <span class="tabs__count" id="tab-count"></span>
+            </div>
+            <ul class="rows" id="list" role="tabpanel"></ul>
+            <p class="rows__empty" id="list-status" role="status">Loading...</p>
+          </section>
+        </div>
+      </main>
+
+      <footer></footer>
+    </div>
+
+    <!-- Modal: แก้ไขโปรไฟล์ -->
+    <dialog class="modal" id="edit-profile-modal" aria-labelledby="edit-title">
+      <form id="edit-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="edit-title">Edit profile</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <label class="soft-input"
+            ><i data-icon="user"></i><input name="name" placeholder="Name Surname" aria-label="ชื่อ" required
+          /></label>
+          <label class="soft-input"
+            ><i data-icon="room"></i><input name="room_number" placeholder="Room No." aria-label="เลขห้อง" required
+          /></label>
+          <label class="soft-input"
+            ><i data-icon="phone"></i
+            ><input name="phone_number" type="tel" placeholder="Phone Number" aria-label="เบอร์โทร"
+          /></label>
+          <p class="modal__message" id="edit-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Modal: แก้ไขโพสต์ -->
+    <dialog class="modal" id="edit-item-modal" aria-labelledby="edit-item-title">
+      <form id="edit-item-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="edit-item-title">Edit post</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <label class="soft-input">
+            <i data-icon="send"></i>
+            <input name="title" maxlength="200" placeholder="Item’s name" aria-label="ชื่อสิ่งของ" required />
+          </label>
+          <label class="soft-input soft-input--area">
+            <i data-icon="pencil"></i>
+            <textarea name="description" rows="3" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
+          </label>
+          <label class="soft-input select-wrap">
+            <select name="category_id" aria-label="หมวดหมู่" required></select>
+          </label>
+          <label class="soft-input" id="edit-desired-field" hidden>
+            <i data-icon="swap"></i>
+            <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
+          </label>
+          <p class="edit-item__note">Images and type can’t be changed after posting.</p>
+          <p class="modal__message" id="edit-item-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Save changes</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Modal: ยืนยันซ่อนโพสต์ -->
+    <dialog class="modal modal--sm" id="delete-modal" aria-labelledby="delete-title">
+      <div class="modal__header">
+        <h2 class="modal__title" id="delete-title">Delete post?</h2>
+        <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+      </div>
+      <p class="confirm__text"><strong id="delete-item-name"></strong> will be hidden from the community. Other members won’t see it anymore.</p>
+      <p class="modal__message" id="delete-message" role="alert"></p>
+      <div class="confirm__actions">
+        <button class="btn btn--outline" type="button" data-close-modal>Cancel</button>
+        <button class="btn btn--primary" type="button" id="delete-confirm">Delete</button>
+      </div>
+    </dialog>
+
+    <!-- Modal: รายละเอียดโพสต์ / คำขอ -->
+    <dialog class="modal modal--details" id="details-modal" aria-labelledby="details-title-m">
+      <div class="modal__header">
+        <div>
+          <p class="details-modal__eyebrow" id="details-eyebrow"></p>
+          <h2 class="modal__title" id="details-title-m"></h2>
+        </div>
+        <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+      </div>
+      <div class="details-modal__body" id="details-body"></div>
+    </dialog>
+
+    <script type="module" src="../assets/js/pages/profile.js"></script>
+  </body>
+</html>

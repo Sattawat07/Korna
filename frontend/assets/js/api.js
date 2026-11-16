@@ -3,7 +3,8 @@
 // รูปการตอบกลับตาม docs/api.md:
 //   Error: { "error": { "code": "...", "message": "...", "details": {...} } }
 
-const API_BASE_URL = 'http://127.0.0.1:3000/api';
+// ใช้ path เดียวกับหน้าเว็บ (same-origin) — ใช้ได้ทั้ง http://127.0.0.1:3000 และ URL ของ Tailscale Serve
+const API_BASE_URL = '/api';
 
 function getAuthHeader() {
   const token = localStorage.getItem('korna_token');
@@ -11,18 +12,20 @@ function getAuthHeader() {
 }
 
 export async function request(path, { method = 'GET', body = null, headers = {} } = {}) {
+  // FormData (อัปโหลดรูป) ต้องให้เบราว์เซอร์ตั้ง Content-Type multipart/form-data เอง
+  const isFormData = body instanceof FormData;
   const config = {
     method,
     credentials: 'include', // รองรับ Session Cookie (HttpOnly) ตาม api.md ล่าสุด
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...getAuthHeader(),
       ...headers,
     },
   };
 
   if (body) {
-    config.body = JSON.stringify(body);
+    config.body = isFormData ? body : JSON.stringify(body);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, config);
