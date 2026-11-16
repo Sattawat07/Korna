@@ -1,6 +1,6 @@
 // Admin Dashboard page logic — Vanilla JS
 import { request } from '../api.js';
-import { loadAdminProfile } from '../shared/admin-common.js';
+import { loadAdminProfile, setupLogoutModal } from '../shared/admin-common.js';
 
 function formatShortDate(isoDate) {
   const d = new Date(`${isoDate}T00:00:00`);
@@ -123,13 +123,12 @@ async function initDashboard() {
   }
 }
 
-document.getElementById('logout-btn')?.addEventListener('click', async () => {
-  try {
-    await request('/auth/logout', { method: 'POST' });
-  } catch {
-    // Ignore logout errors and redirect to login
-  }
-  window.location.href = 'login.html';
+setupLogoutModal({
+  triggerBtn: document.getElementById('logout-btn'),
+  modal: document.getElementById('logout-modal'),
+  stayBtn: document.getElementById('logout-stay-btn'),
+  confirmBtn: document.getElementById('logout-confirm-btn'),
+  closeBtn: document.getElementById('logout-close-btn'),
 });
 
 initDashboard();
