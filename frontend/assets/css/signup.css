@@ -21,17 +21,17 @@ body {
 }
 
 .logo {
-  width: 56px;
-  height: 56px;
-  background-color: #5E4636;
-  border-radius: 50%;
+  width: 88px;
+  height: 88px;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  font-weight: 700;
-  font-size: 14px;
+  border-radius: 50%;
+  box-shadow: 0 10px 24px rgba(94, 70, 54, 0.22);
+}
+
+.logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Signup card */
