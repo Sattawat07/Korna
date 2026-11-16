@@ -418,11 +418,18 @@
 }
 
 .modal-detail-img {
+  display: block;
   width: 100%;
-  max-height: 220px;
-  object-fit: cover;
+  height: 240px;
+  object-fit: contain; /* แสดงทั้งรูป ไม่ตัดขอบ */
+  border: 1px solid var(--border-soft);
   border-radius: 12px;
   background-color: #EFE5D0;
+}
+
+[data-theme="dark"] .modal-detail-img,
+[data-theme="dark"] .item-thumb {
+  background-color: #352820;
 }
 
 .modal-detail-meta {
