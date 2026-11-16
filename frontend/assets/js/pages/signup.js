@@ -1,6 +1,6 @@
 // Signup page logic — Vanilla JS
 import { request } from '../api.js';
-import { setupOtpInputs, startCountdown } from '../shared/modal.js';
+import { closeAccessibleModal, openAccessibleModal, setupOtpInputs, startCountdown } from '../shared/modal.js';
 
 const form = document.querySelector('form');
 const nameInput = document.querySelector('#name');
@@ -68,14 +68,14 @@ let pendingUserData = null;
 const otpHandler = setupOtpInputs(otpContainer);
 
 function openOtpModal(email) {
-  otpModal.classList.add('active');
   targetEmailSpan.textContent = email;
+  openAccessibleModal(otpModal, closeOtpModal);
   otpHandler.focusFirst();
   startOtpCountdown();
 }
 
 function closeOtpModal() {
-  otpModal.classList.remove('active');
+  closeAccessibleModal(otpModal);
   if (stopTimerFn) stopTimerFn();
   otpError.textContent = '';
   otpHandler.clear();

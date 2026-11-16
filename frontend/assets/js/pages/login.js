@@ -1,6 +1,6 @@
 // Login page logic — Vanilla JS
 import { request } from '../api.js';
-import { setupOtpInputs, startCountdown } from '../shared/modal.js';
+import { closeAccessibleModal, openAccessibleModal, setupOtpInputs, startCountdown } from '../shared/modal.js';
 
 const form = document.querySelector('form');
 const emailInput = document.querySelector('input[type="email"]');
@@ -93,6 +93,7 @@ const otpContainer = document.getElementById('forgot-otp-inputs');
 const targetEmailSpan = document.getElementById('otp-target-email');
 const timerSpan = document.getElementById('forgot-timer');
 const resendBtn = document.getElementById('forgot-resend-btn');
+const changeEmailBtn = document.getElementById('forgot-change-email-btn');
 const error2 = document.getElementById('forgot-error-2');
 
 const resetForm = document.getElementById('forgot-reset-form');
@@ -107,14 +108,14 @@ let currentResetEmail = '';
 const otpHandler = setupOtpInputs(otpContainer);
 
 function openModal() {
-  forgotModal.classList.add('active');
   showStep(1);
   forgotEmailInput.value = emailInput.value || '';
+  openAccessibleModal(forgotModal, closeModal);
   setTimeout(() => forgotEmailInput.focus(), 100);
 }
 
 function closeModal() {
-  forgotModal.classList.remove('active');
+  closeAccessibleModal(forgotModal);
   if (stopTimerFn) stopTimerFn();
   error1.textContent = '';
   error2.textContent = '';
@@ -123,9 +124,9 @@ function closeModal() {
 }
 
 function showStep(stepNum) {
-  step1.style.display = stepNum === 1 ? 'block' : 'none';
-  step2.style.display = stepNum === 2 ? 'block' : 'none';
-  step3.style.display = stepNum === 3 ? 'block' : 'none';
+  step1.classList.toggle('is-hidden', stepNum !== 1);
+  step2.classList.toggle('is-hidden', stepNum !== 2);
+  step3.classList.toggle('is-hidden', stepNum !== 3);
 
   if (stepNum === 2) {
     targetEmailSpan.textContent = currentResetEmail;
@@ -146,6 +147,13 @@ function startOtpCountdown() {
 
 forgotBtn?.addEventListener('click', openModal);
 modalCloseBtn?.addEventListener('click', closeModal);
+changeEmailBtn?.addEventListener('click', () => {
+  if (stopTimerFn) stopTimerFn();
+  error2.textContent = '';
+  otpHandler.clear();
+  showStep(1);
+  forgotEmailInput.focus();
+});
 forgotModal?.addEventListener('click', (e) => {
   if (e.target === forgotModal) closeModal();
 });

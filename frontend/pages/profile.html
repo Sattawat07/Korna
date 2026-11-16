@@ -6,6 +6,8 @@
     <title>Profile · KORNA</title>
     <link rel="stylesheet" href="../assets/css/base.css" />
     <link rel="stylesheet" href="../assets/css/profile.css" />
+    <link rel="stylesheet" href="../assets/css/theme.css" />
+    <script type="module" src="../assets/js/shared/theme.js"></script>
   </head>
   <body class="profile-page">
     <div class="profile">
@@ -15,6 +17,7 @@
           <h1 class="profile__title">Profile</h1>
         </div>
         <nav class="profile__actions" aria-label="เมนูผู้ใช้">
+          <a class="btn btn--primary" id="admin-link" href="./admin-dashboard.html" hidden>Admin</a>
           <button class="icon-btn" type="button" id="logout-btn" aria-label="ออกจากระบบ">
             <i data-icon="logout"></i>
           </button>

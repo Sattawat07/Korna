@@ -282,7 +282,7 @@ button[type="submit"] {
   font-size: 14px;
   font-weight: 600;
   color: #5E4636;
-  background-color: #F4C542;
+  background-color: var(--accent-yellow);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -291,7 +291,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background-color: #e6b83c;
+  background-color: var(--accent-yellow-strong);
 }
 
 button[type="submit"]:focus-visible {

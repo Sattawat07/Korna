@@ -1,0 +1,183 @@
+/* Global Theme Tokens (Light & Dark Mode) */
+:root {
+  --bg-page: #F7F1E6;
+  --bg-sidebar: #FFF8E8;
+  --bg-card: #FFF8E8;
+  --bg-dark: #5E4636;
+  --accent-yellow: #FCEB9B;
+  --accent-yellow-strong: #F6DF7B;
+  --border-soft: #E8D9B8;
+  --text-main: #5E4636;
+  --text-muted: #7A5A3E;
+  --text-light: #FFFFFF;
+  --dot-taupe: #DFD2BA;
+}
+
+[data-theme="dark"] {
+  --bg-page: #1E1712;
+  --bg-sidebar: #2A2019;
+  --bg-card: #2A2019;
+  --bg-dark: #3E2F24;
+  --accent-yellow: #FCEB9B;
+  --accent-yellow-strong: #F6DF7B;
+  --border-soft: #4A392D;
+  --text-main: #F7F1E6;
+  --text-muted: #CBB9A4;
+  --text-light: #FFF8E8;
+  --dot-taupe: #6E5949;
+
+  /* base.css tokens (Feed & Profile) */
+  --color-bg: #1E1712;
+  --color-surface: #2A2019;
+  --color-muted: #352820;
+  --color-border: #4A392D;
+  --color-primary: #FCEB9B;
+  --color-primary-hover: #F6DF7B;
+  --color-brown: #F7F1E6;
+  --color-brown-2: #CBB9A4;
+  --color-text: #F7F1E6;
+  --color-text-muted: #CBB9A4;
+  --color-on-brown: #1E1712;
+  --color-overlay: rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="dark"] .items-table th {
+  background-color: #352820;
+}
+
+[data-theme="dark"] .user-row-btn.active {
+  background-color: #3E2F24;
+  border-color: #6E5949;
+}
+
+[data-theme="dark"] .nav-item:hover,
+[data-theme="dark"] .logout-btn:hover,
+[data-theme="dark"] .btn-outline:hover {
+  background-color: #352820;
+}
+
+[data-theme="dark"] .nav-item.active,
+[data-theme="dark"] .nav-item.active:hover,
+[data-theme="dark"] .tab-btn.active,
+[data-theme="dark"] .tab-btn.active:hover,
+[data-theme="dark"] .btn-yellow,
+[data-theme="dark"] .cta-btn {
+  background-color: var(--accent-yellow);
+  color: #3B2B20;
+}
+
+[data-theme="dark"] .nav-item.active:hover,
+[data-theme="dark"] .tab-btn.active:hover,
+[data-theme="dark"] .btn-yellow:hover,
+[data-theme="dark"] .cta-btn:hover {
+  background-color: var(--accent-yellow-strong);
+}
+
+[data-theme="dark"] .status-available,
+[data-theme="dark"] .item-thumb-placeholder {
+  background-color: #3E2F24;
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .status-pending {
+  background-color: var(--accent-yellow);
+  color: #3B2B20;
+}
+
+[data-theme="dark"] .status-removed {
+  background-color: #4B2823;
+  color: #F5B8AF;
+}
+
+/* Auth & Modal Dark Mode Overrides (centralized in theme.css) */
+[data-theme="dark"] body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .login-card,
+[data-theme="dark"] .signup-card,
+[data-theme="dark"] .modal-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-soft);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .login-card input:not([type="checkbox"]),
+[data-theme="dark"] .signup-card input:not([type="checkbox"]),
+[data-theme="dark"] .modal-card input,
+[data-theme="dark"] .otp-digit {
+  background-color: var(--bg-page);
+  border-color: var(--border-soft);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .login-card h1,
+[data-theme="dark"] .login-card h2,
+[data-theme="dark"] .login-card label,
+[data-theme="dark"] .login-card a,
+[data-theme="dark"] .signup-card h1,
+[data-theme="dark"] .signup-card h2,
+[data-theme="dark"] .signup-card label,
+[data-theme="dark"] .signup-card a,
+[data-theme="dark"] .modal-card h3,
+[data-theme="dark"] .modal-card label,
+[data-theme="dark"] .modal-header .user-email-target,
+[data-theme="dark"] .otp-timer span,
+[data-theme="dark"] .forgot-link-btn,
+[data-theme="dark"] .modal-footer button.link-btn {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .login-card svg,
+[data-theme="dark"] .signup-card svg {
+  fill: var(--text-muted);
+}
+
+[data-theme="dark"] .form-actions .forgot-link-btn {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .form-actions .forgot-link-btn:hover {
+  color: var(--accent-yellow);
+}
+
+[data-theme="dark"] .login-card input[type="checkbox"] {
+  accent-color: var(--accent-yellow);
+  background-color: var(--bg-page);
+  border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .login-card p,
+[data-theme="dark"] .signup-card p,
+[data-theme="dark"] .modal-card p,
+[data-theme="dark"] .otp-timer,
+[data-theme="dark"] .modal-footer {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .modal-close-btn {
+  background-color: var(--bg-page);
+  border-color: var(--border-soft);
+  color: var(--text-main);
+}
+
+.theme-toggle-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 900;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.theme-toggle-fab:hover {
+  border-color: var(--text-muted);
+}
