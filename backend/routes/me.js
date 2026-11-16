@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { pool } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { basename, join } from 'node:path';
+import { config } from '../config.js';
+import { imageUpload, requireMultipart, validateImages, saveImages, discardImages } from '../uploads.js';
 
 export const meRouter = Router();
 
@@ -12,6 +15,7 @@ meRouter.get('/', requireAuth, async (req, res) => {
 			SELECT
 				u.user_id AS id,
 				u.user_name AS name,
+				u.user_avatar_url AS avatar_url,
 				u.user_email AS email,
 				u.role,
 				u.user_room_number AS room_number,
@@ -43,6 +47,7 @@ meRouter.get('/', requireAuth, async (req, res) => {
 			user: {
 				id: Number(row.id),
 				name: row.name,
+				avatar_url: row.avatar_url,
 				email: row.email,
 				role: row.role,
 				room_number: row.room_number,
@@ -137,6 +142,7 @@ meRouter.patch('/', requireAuth, async (req, res) => {
 			RETURNING
 				user_id AS id,
 				user_name AS name,
+				user_avatar_url AS avatar_url,
 				user_email AS email,
 				role,
 				user_room_number AS room_number,
@@ -171,6 +177,61 @@ meRouter.patch('/', requireAuth, async (req, res) => {
 	}
 });
 
+meRouter.put('/avatar', requireAuth, requireMultipart, imageUpload('avatar', 1), async (req, res) => {
+	if (req.files?.length !== 1 || !validateImages(req.files)) {
+		return res.status(400).json({
+			error: {
+				code: 'VALIDATION_ERROR',
+				message: 'Please check the submitted fields.',
+				details: { avatar: 'Upload one JPEG, PNG, or WebP image' },
+			},
+		});
+	}
+
+	let client;
+	const savedPaths = [];
+	let committed = false;
+	try {
+		client = await pool.connect();
+		await client.query('BEGIN');
+		const { rows } = await client.query(
+			'SELECT user_avatar_url FROM users WHERE user_id = $1 FOR UPDATE',
+			[req.user.id]
+		);
+		if (rows.length === 0) {
+			await client.query('ROLLBACK');
+			return res.status(401).json({
+				error: { code: 'UNAUTHENTICATED', message: 'Please log in first.' },
+			});
+		}
+
+		const oldUrl = rows[0].user_avatar_url;
+		const [avatarUrl] = await saveImages(req.files, 'avatars', savedPaths);
+		await client.query('UPDATE users SET user_avatar_url = $1 WHERE user_id = $2', [avatarUrl, req.user.id]);
+		await client.query('COMMIT');
+		committed = true;
+
+		if (oldUrl && /^\/uploads\/avatars\/[0-9a-f-]+\.(jpg|png|webp)$/.test(oldUrl)) {
+			await discardImages([join(config.uploadDir, 'avatars', basename(oldUrl))]);
+		}
+		return res.status(200).json({ avatar_url: avatarUrl });
+	} catch (error) {
+		if (!committed) {
+			if (client) {
+				try { await client.query('ROLLBACK'); }
+				catch (rollbackError) { console.error('Failed to roll back avatar update:', rollbackError); }
+			}
+			await discardImages(savedPaths);
+		}
+		console.error('Failed to update avatar:', error);
+		return res.status(503).json({
+			error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' },
+		});
+	} finally {
+		client?.release();
+	}
+});
+
 meRouter.get('/items', requireAuth, async (req, res) => {
 	const userId = req.user.id;
 
@@ -181,6 +242,7 @@ meRouter.get('/items', requireAuth, async (req, res) => {
 				c.category_id,
 				c.category_name,
 				u.user_name AS owner_name,
+				u.user_avatar_url AS owner_avatar_url,
 				sd.desired_description,
 				dc.category_id AS desired_category_id,
 				dc.category_name AS desired_category_name,
@@ -233,6 +295,7 @@ meRouter.get('/items', requireAuth, async (req, res) => {
 			owner: {
 				id: Number(row.item_owner_id),
 				name: row.owner_name,
+				avatar_url: row.owner_avatar_url,
 			},
 			swap_details: row.item_type === 'swap' ? {
 				desired_category: row.desired_category_id == null ? null : {

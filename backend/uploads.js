@@ -6,15 +6,15 @@ import { config } from './config.js';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-export function imageUpload(field) {
+export function imageUpload(field, maxFiles = 5) {
 	const upload = multer({
 		storage: multer.memoryStorage(),
 		limits: {
 			fileSize: MAX_IMAGE_BYTES,
-			files: 5,
+			files: maxFiles,
 			fields: 12,
 		},
-	}).array(field, 5);
+	}).array(field, maxFiles);
 
 	return (req, res, next) => {
 		upload(req, res, (error) => {
@@ -34,7 +34,7 @@ export function imageUpload(field) {
 				error: {
 					code: 'VALIDATION_ERROR',
 					message: 'Please check the submitted fields.',
-					details: { [field]: 'Upload at most 5 images in the expected field' },
+					details: { [field]: `Upload at most ${maxFiles} image${maxFiles === 1 ? '' : 's'} in the expected field` },
 				},
 			});
 		});

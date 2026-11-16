@@ -75,6 +75,7 @@
 | --- | --- | --- | --- |
 | GET | `/api/me` | ข้อมูลบัญชีของฉัน | ผู้ใช้ |
 | PATCH | `/api/me` | แก้ข้อมูลบัญชี | ผู้ใช้ |
+| PUT | `/api/me/avatar` | อัปโหลดหรือเปลี่ยนรูปโปรไฟล์ | ผู้ใช้ |
 | GET | `/api/me/items` | โปรไฟล์: โพสต์ของฉัน | ผู้ใช้ |
 | GET | `/api/requests?role=sent` | โปรไฟล์: Activity หรือโพสต์ที่ฉันส่งคำขอ | ผู้ใช้ |
 | GET | `/api/requests?role=received&item_id=:id` | โพสต์ของฉัน: คนที่ส่งคำขอมา | เจ้าของโพสต์ |
@@ -156,6 +157,7 @@ browser ส่ง cookie `signup_challenge` พร้อม JSON `{"otp":"123456
   "user": {
     "id": 1,
     "name": "Nina",
+    "avatar_url": null,
     "email": "nina@example.com",
     "role": "user",
     "room_number": "A-304",
@@ -196,6 +198,16 @@ browser ส่ง cookie `signup_challenge` โดยไม่ต้องส่
 ### PATCH /api/me
 
 ส่ง JSON เฉพาะฟิลด์ที่ต้องการแก้จาก `name`, `room_number`, `phone_number` อนุญาตให้ `phone_number:null` เพื่อลบเบอร์ ตอบ `200 {"user":{ ... }}` พร้อมข้อมูลล่าสุด ใช้ข้อจำกัดความยาวเดียวกับการสมัคร ไม่แก้อีเมล รหัสผ่าน หรือ role ผ่าน endpoint นี้
+
+### PUT /api/me/avatar
+
+ต้องล็อกอินและส่ง `multipart/form-data` โดยมีไฟล์หนึ่งไฟล์ในฟิลด์ `avatar` รองรับ JPEG, PNG หรือ WebP ขนาดไม่เกิน 5 MB ตรวจทั้งชนิดไฟล์และข้อมูลภายในไฟล์ ตอบ `200 {"avatar_url":"/uploads/avatars/<filename>"}` ทั้งการอัปโหลดครั้งแรกและการเปลี่ยนรูป หากยังไม่มีรูป `avatar_url` เป็น `null`; frontend ใช้ภาพ placeholder ได้ รูปเรียกผ่าน URL `/uploads/...` โดยตรง
+
+ถ้าไม่ใช่ multipart ตอบ `415 UNSUPPORTED_MEDIA_TYPE`; ไม่มีไฟล์ ชนิดไม่ถูกต้อง หรือส่งเกินหนึ่งไฟล์ ตอบ `400 VALIDATION_ERROR`; ไฟล์ใหญ่เกินกำหนดตอบ `413 FILE_TOO_LARGE`; ยังไม่ล็อกอินตอบ `401 UNAUTHENTICATED` หลังเปลี่ยนรูปสำเร็จ API ลบไฟล์รูปเดิม
+
+`avatar_url` อยู่ใน `user` ของ `GET /api/me`, `PATCH /api/me`, `POST /api/auth/login` และ `POST /api/auth/register/verify`; อยู่ใน `owner` ของรายการโพสต์และ `GET /api/me/items`; อยู่ใน `requester` ของรายการคำขอ, `actor` ของรายการแจ้งเตือน และข้อมูลผู้ใช้ใน API admin
+
+ฐานข้อมูลใหม่ใช้ `db/schema.sql` ที่มี `user_avatar_url` แล้ว ฐานข้อมูลที่สร้างไว้ก่อนให้รัน `db/add_user_avatar.sql` หนึ่งครั้งก่อนใช้ API นี้
 
 ## หมวดหมู่
 
@@ -245,7 +257,8 @@ ID ในตัวอย่างเป็นเพียงตัวอย่�
   ],
   "owner": {
     "id": 1,
-    "name": "Nina"
+    "name": "Nina",
+    "avatar_url": null
   },
   "swap_details": {
     "desired_category": {
@@ -300,7 +313,7 @@ Query string ทุกตัวไม่จำเป็น:
       "images": [
         { "id": 101, "url": "/uploads/items/abc.webp", "position": 0 }
       ],
-      "owner": { "id": 1, "name": "Nina" },
+      "owner": { "id": 1, "name": "Nina", "avatar_url": null },
       "created_at": "2026-10-18T10:00:00.000Z"
     }
   ],
@@ -362,7 +375,8 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
   },
   "requester": {
     "id": 2,
-    "name": "Ton"
+    "name": "Ton",
+    "avatar_url": null
   },
   "message": "Interested in exchanging",
   "status": "pending",
@@ -416,7 +430,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 ```json
 {
   "notifications": [
-    { "id": 41, "type": "request_received", "item_id": 12, "request_id": 31, "actor": { "id": 2, "name": "Ton" }, "read_at": null, "created_at": "2026-10-18T11:00:00.000Z" }
+    { "id": 41, "type": "request_received", "item_id": 12, "request_id": 31, "actor": { "id": 2, "name": "Ton", "avatar_url": null }, "read_at": null, "created_at": "2026-10-18T11:00:00.000Z" }
   ],
   "unread_count": 1,
   "pagination": { "page": 1, "limit": 20, "total": 1, "total_pages": 1 }
@@ -475,7 +489,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 ```json
 {
   "users": [
-    { "id": 1, "name": "Nina", "email": "nina@example.com", "role": "user", "room_number": "A-304", "phone_number": "0812345678", "created_at": "2026-10-18T10:00:00.000Z", "items_count": 3 }
+    { "id": 1, "name": "Nina", "avatar_url": null, "email": "nina@example.com", "role": "user", "room_number": "A-304", "phone_number": "0812345678", "created_at": "2026-10-18T10:00:00.000Z", "items_count": 3 }
   ],
   "pagination": { "page": 1, "limit": 20, "total": 1, "total_pages": 1 }
 }

@@ -227,6 +227,7 @@ authRouter.post('/register/verify', async (req, res) => {
 			RETURNING
 				user_id AS id,
 				user_name AS name,
+				user_avatar_url AS avatar_url,
 				user_email AS email,
 				role,
 				user_room_number AS room_number,
@@ -384,6 +385,7 @@ authRouter.post("/login", async (req, res) => {
 			SELECT
 				user_id AS id,
 				user_name AS name,
+				user_avatar_url AS avatar_url,
 				user_email AS email,
 				password_hash,
 				role,
@@ -462,6 +464,7 @@ authRouter.post("/login", async (req, res) => {
 				user: {
 					id: Number(user.id),
 					name: user.name,
+					avatar_url: user.avatar_url,
 					email: user.email,
 					role: user.role,
 					room_number: user.room_number,
