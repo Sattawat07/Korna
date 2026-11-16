@@ -1312,20 +1312,6 @@ html[data-theme='dark'] .status--accepted {
   margin-right: auto;
 }
 
-/* ---------- ปุ่มสลับธีม (มาจาก theme.css) ให้ใช้ token ---------- */
-.theme-toggle-fab {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border-color: var(--color-border);
-  transition:
-    background-color var(--ease),
-    border-color var(--ease);
-}
-
-.theme-toggle-fab:hover {
-  background: var(--color-hover);
-}
-
 /* ---------- ข้อความแจ้งสั้นๆ ---------- */
 .toast {
   position: fixed;
