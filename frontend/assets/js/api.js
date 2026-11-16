@@ -6,20 +6,14 @@
 // ใช้ path เดียวกับหน้าเว็บ (same-origin) — ใช้ได้ทั้ง http://127.0.0.1:3000 และ URL ของ Tailscale Serve
 const API_BASE_URL = '/api';
 
-function getAuthHeader() {
-  const token = localStorage.getItem('korna_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 export async function request(path, { method = 'GET', body = null, headers = {} } = {}) {
   // FormData (อัปโหลดรูป) ต้องให้เบราว์เซอร์ตั้ง Content-Type multipart/form-data เอง
   const isFormData = body instanceof FormData;
   const config = {
     method,
-    credentials: 'include', // รองรับ Session Cookie (HttpOnly) ตาม api.md ล่าสุด
+    credentials: 'include', // ยืนยันตัวตนด้วย session cookie (HttpOnly) อย่างเดียว ตาม docs/api.md
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...getAuthHeader(),
       ...headers,
     },
   };

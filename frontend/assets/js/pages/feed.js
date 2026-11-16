@@ -12,7 +12,7 @@ const state = { q: '', category_id: '', type: '', range: '', sort: 'newest', vie
 let me = null;
 let items = [];
 let loadToken = 0; // กันผลลัพธ์เก่ามาทับเมื่อเปลี่ยนตัวกรองเร็วๆ
-const requestedIds = new Set(); // โพสต์ที่เพิ่งส่งคำขอในหน้านี้
+const requestedIds = new Set(); // id โพสต์ที่ผู้ใช้เคยส่งคำขอแล้ว
 
 const $ = (id) => document.getElementById(id);
 const cardsEl = $('cards');
@@ -35,12 +35,23 @@ async function init() {
     const [meData, categoryData] = await Promise.all([loadMe(), request('/categories')]);
     me = meData.user;
     fillCategorySelects(categoryData.categories);
+    await loadRequestedIds();
     setupNotifications();
   } catch (error) {
     showStatus(errorText(error, 'Unable to load the page. Please try again.'), true);
     return;
   }
   await loadItems({ reset: true });
+}
+
+/** โพสต์ที่เคยส่งคำขอไปแล้ว (GET /api/requests?role=sent) — ให้ปุ่มขึ้น Requested ตั้งแต่เปิดหน้า */
+async function loadRequestedIds() {
+  try {
+    const data = await request('/requests?role=sent');
+    data.requests.forEach((r) => requestedIds.add(r.item.id));
+  } catch {
+    /* โหลดไม่ได้ก็ยังใช้ฟีดได้ — ถ้ากดขอซ้ำ API จะตอบ 409 และปุ่มจะเปลี่ยนเป็น Requested เอง */
+  }
 }
 
 function fillCategorySelects(categories) {

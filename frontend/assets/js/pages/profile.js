@@ -14,7 +14,8 @@ let myItems = []; // GET /api/me/items
 let sentRequests = []; // GET /api/requests?role=sent
 let tab = 'items';
 let pendingDeleteId = null;
-let openItemId = null; // โพสต์ที่เปิดดูรายละเอียดอยู่
+let openItemId = null; // โพสต์ของฉันที่เปิดดูรายละเอียดอยู่
+let openRequestId = null; // คำขอที่ฉันส่งที่เปิดดูรายละเอียดอยู่
 
 hydrateIcons();
 setupModals();
@@ -323,6 +324,7 @@ function bindDetails() {
 
   $('details-modal').addEventListener('close', () => {
     openItemId = null;
+    openRequestId = null;
   });
 }
 
@@ -379,6 +381,7 @@ async function showMyItem(id) {
     return;
   }
   openItemId = id;
+  openRequestId = null;
   const base = `${gallery(item.images.map((i) => i.url), item.title)}${itemFacts(item)}${itemText(item)}`;
   showDetails('MY ITEM', item.title, `${base}<p class="details-label details-label--section">Requests</p><p class="details-text">Loading...</p>`);
   let reqs;
@@ -405,16 +408,20 @@ async function showSentRequest(id) {
     showDetails('MY REQUEST', 'Not found', '<p class="details-text">This request could not be found.</p>');
     return;
   }
+  openRequestId = id;
+  openItemId = null;
   const mine = `<p class="details-label details-label--section">My request</p><ul class="reqs">${requestCard(req, false)}</ul>`;
   showDetails('MY REQUEST', req.item.title, `<p class="details-text">Loading...</p>${mine}`);
   try {
     const data = await request(`/items/${req.item.id}`);
+    if (openRequestId !== id) return; // ผู้ใช้เปิดรายการอื่นไปแล้ว ไม่แสดงผลเก่าทับ
     const item = data.item;
     $('details-body').innerHTML = `${gallery(item.images.map((i) => i.url), item.title)}
       ${itemFacts(item)}
       <p class="details-label">Owner</p><p class="details-text">${escapeHtml(item.owner.name)}</p>
       ${itemText(item)}${mine}`;
   } catch {
+    if (openRequestId !== id) return;
     // โพสต์อาจถูกซ่อนแล้ว — ยังแสดงข้อมูลคำขอของฉันได้
     $('details-body').innerHTML = `<p class="details-text">This post is no longer available.</p>${mine}`;
   }
