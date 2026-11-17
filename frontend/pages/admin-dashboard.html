@@ -260,6 +260,21 @@
     </main>
   </div>
 
+  <!-- Modal: Delete Item Confirmation -->
+  <div class="admin-modal-backdrop" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+    <div class="admin-modal-card">
+      <button type="button" class="admin-modal-close" id="delete-close-btn" aria-label="Close">✕</button>
+      <h3 id="delete-modal-title">Delete this item?</h3>
+      <p class="subtitle">This will hide the listing from the community.</p>
+      <strong id="delete-item-name">Item</strong>
+      <div class="modal-error" id="delete-error"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" id="delete-cancel-btn">Keep item</button>
+        <button type="button" class="btn-yellow" id="delete-confirm-btn">Delete item</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Logout Confirmation -->
   <div class="admin-modal-backdrop" id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
     <div class="admin-modal-card">
@@ -284,6 +299,7 @@
       <p class="subtitle" id="recent-modal-time"></p>
       <div id="recent-modal-item"></div>
       <div class="modal-actions">
+        <button type="button" class="btn-outline recent-delete" id="recent-delete-btn" hidden>Delete item</button>
         <button type="button" class="btn-outline" data-close-recent>Close</button>
         <a class="btn-yellow" id="recent-modal-link" href="admin-items.html" hidden>Open in Items &amp; Posts</a>
       </div>

@@ -5,6 +5,7 @@ import {
   closeModalDialog,
   escapeHtml,
   getStatusDisplay,
+  getTypeDisplay,
   loadAdminProfile,
   openModalDialog,
   sanitizeImageUrl,
@@ -146,15 +147,21 @@ const REQUEST_STATUS = {
 const itemCache = new Map(); // item_id -> item | null (ถูกลบแล้ว/หาไม่เจอ)
 let recentRequests = [];
 
+let removedItemsPromise = null; // โพสต์ที่ถูกลบ ดูได้ผ่าน API admin เท่านั้น (โหลดครั้งเดียว)
+
 async function fetchItem(id) {
   if (itemCache.has(id)) return itemCache.get(id);
+  let item = null;
   try {
-    const data = await request(`/items/${id}`);
-    itemCache.set(id, data.item);
+    item = (await request(`/items/${id}`)).item;
   } catch {
-    itemCache.set(id, null);
+    removedItemsPromise ??= request('/admin/items?status=removed&limit=50')
+      .then((res) => res.items || [])
+      .catch(() => []);
+    item = (await removedItemsPromise).find((i) => Number(i.id) === Number(id)) ?? null;
   }
-  return itemCache.get(id);
+  itemCache.set(id, item);
+  return item;
 }
 
 function formatDateTime(iso) {
@@ -173,7 +180,9 @@ function renderRecent(recent) {
       .map((req) => {
         const st = REQUEST_STATUS[req.status] ?? REQUEST_STATUS.pending;
         const item = itemCache.get(req.item_id);
-        const itemText = item ? item.title : item === null ? `Item #${req.item_id} (removed)` : `Item #${req.item_id}`;
+        const itemText = item
+          ? `${item.title}${item.status === 'removed' ? ' (removed)' : ''}`
+          : item === null ? `Item #${req.item_id} (unavailable)` : `Item #${req.item_id}`;
         return `
         <li class="recent-item">
           <button type="button" class="recent-btn" data-request-id="${req.id}" aria-label="View request #${req.id}">
@@ -208,23 +217,28 @@ async function openRecent(requestId) {
   const link = document.getElementById('recent-modal-link');
   body.innerHTML = '<p class="subtitle">Loading post...</p>';
   link.hidden = true;
+  recentDeleteBtn.hidden = true;
+  selectedItem = null;
   openModalDialog(recentModal);
 
   const item = await fetchItem(req.item_id);
   if (!recentModal.classList.contains('active')) return;
   if (!item) {
-    body.innerHTML = `<p class="subtitle">Post #${req.item_id} has been removed or is no longer available.</p>`;
+    body.innerHTML = `<p class="subtitle">Post #${req.item_id} is no longer available.</p>`;
     return;
   }
+  selectedItem = item;
   const img = sanitizeImageUrl(item.image_url);
   const itemStatus = getStatusDisplay(item.status);
+  const itemType = getTypeDisplay(item.type);
+  const wants = item.type === 'swap' ? item.swap_details?.desired_description : '';
   body.innerHTML = `
     ${img ? `<img class="modal-detail-img" src="${img}" alt="">` : ''}
     <div class="recent-modal-grid">
       <div>
         <div class="meta-label">Post</div>
         <div class="meta-value">${escapeHtml(item.title)}</div>
-        <div class="recent-desc">${escapeHtml(item.category?.name || 'Uncategorized')} · ${item.type === 'swap' ? 'Swap' : 'Free'}</div>
+        <div class="recent-desc"><span class="type-pill ${itemType.cls}">${itemType.label}</span>${escapeHtml(item.category?.name || 'Uncategorized')}</div>
       </div>
       <div>
         <div class="meta-label">Owner</div>
@@ -235,11 +249,13 @@ async function openRecent(requestId) {
         <span class="status-pill ${itemStatus.cls}">${escapeHtml(itemStatus.label)}</span>
       </div>
     </div>
-    ${item.description ? `<div class="meta-label">Description</div><p class="recent-modal-text">${escapeHtml(item.description)}</p>` : ''}`;
+    ${item.description ? `<div class="meta-label">Description</div><p class="recent-modal-text">${escapeHtml(item.description)}</p>` : ''}
+    ${wants ? `<div class="meta-label">Looking to swap for</div><p class="recent-modal-text">${escapeHtml(wants)}</p>` : ''}`;
   // รูปเสีย/ไฟล์หาย → ซ่อนกรอบรูปแทนไอคอนรูปแตก
   body.querySelector('.modal-detail-img')?.addEventListener('error', (e) => e.target.remove(), { once: true });
   link.href = `admin-items.html?q=${encodeURIComponent(item.title)}`;
   link.hidden = false;
+  recentDeleteBtn.hidden = item.status === 'removed';
 }
 
 document.getElementById('recent-activity-list').addEventListener('click', (e) => {
@@ -248,6 +264,43 @@ document.getElementById('recent-activity-list').addEventListener('click', (e) =>
 });
 recentModal.addEventListener('click', (e) => {
   if (e.target === recentModal || e.target.closest('[data-close-recent]')) closeModalDialog(recentModal);
+});
+
+// ---------- ลบโพสต์จากป๊อปอัป ----------
+let selectedItem = null;
+const recentDeleteBtn = document.getElementById('recent-delete-btn');
+const deleteModal = document.getElementById('delete-modal');
+const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+const deleteError = document.getElementById('delete-error');
+
+recentDeleteBtn.addEventListener('click', () => {
+  if (!selectedItem) return;
+  closeModalDialog(recentModal);
+  deleteError.textContent = '';
+  document.getElementById('delete-item-name').textContent = selectedItem.title;
+  openModalDialog(deleteModal);
+});
+['delete-close-btn', 'delete-cancel-btn'].forEach((id) =>
+  document.getElementById(id).addEventListener('click', () => closeModalDialog(deleteModal)),
+);
+deleteModal.addEventListener('click', (e) => {
+  if (e.target === deleteModal) closeModalDialog(deleteModal);
+});
+deleteConfirmBtn.addEventListener('click', async () => {
+  if (!selectedItem) return;
+  deleteConfirmBtn.disabled = true;
+  deleteError.textContent = '';
+  try {
+    await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
+    closeModalDialog(deleteModal);
+    itemCache.clear();
+    removedItemsPromise = null;
+    await loadStats();
+  } catch (error) {
+    deleteError.textContent = error.message || 'Unable to delete item.';
+  } finally {
+    deleteConfirmBtn.disabled = false;
+  }
 });
 
 // ---------- Tooltip ของกราฟ (ชี้เมาส์ หรือกด Tab มาที่แท่ง/แถว) ----------
@@ -373,7 +426,10 @@ function renderPostsByCategory(byCategory = []) {
 
 async function initDashboard() {
   await loadAdminProfile(document.getElementById('admin-name'));
+  await loadStats();
+}
 
+async function loadStats() {
   try {
     const stats = await request('/admin/stats');
     renderStats(stats);

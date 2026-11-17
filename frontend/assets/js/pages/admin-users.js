@@ -5,6 +5,7 @@ import {
   escapeHtml,
   formatShortDate,
   getStatusDisplay,
+  getTypeDisplay,
   loadAdminProfile,
   openModalDialog,
   sanitizeImageUrl,
@@ -226,21 +227,21 @@ async function loadUserItems(ownerId, page = userItemsPage) {
     userItemsListEl.innerHTML = selectedUserItems
       .map((item) => {
         const st = getStatusDisplay(item.status);
+        const tp = getTypeDisplay(item.type);
         const safeImg = sanitizeImageUrl(item.image_url);
         const thumb = safeImg
           ? `<img class="item-thumb" src="${safeImg}" alt="">`
           : '<span class="item-thumb-placeholder">No img</span>';
         return `
-          <div class="user-item-row">
+          <div class="user-item-row item-row-clickable" data-id="${escapeHtml(item.id)}" tabindex="0">
             <div class="item-cell">
               ${thumb}
               <div>
                 <div class="item-title">${escapeHtml(item.title)}</div>
-                <div class="item-cat">${escapeHtml(st.label)} · Listed ${escapeHtml(formatShortDate(item.created_at))}</div>
+                <div class="item-cat"><span class="type-pill ${tp.cls}">${tp.label}</span>${escapeHtml(st.label)} · Listed ${escapeHtml(formatShortDate(item.created_at))}</div>
               </div>
             </div>
             <div class="action-group">
-              <button type="button" class="btn-outline" data-action="view" data-id="${escapeHtml(item.id)}">View details</button>
               <button type="button" class="btn-outline" data-action="delete" data-id="${escapeHtml(item.id)}" ${item.status === 'removed' ? 'disabled' : ''}>Delete</button>
             </div>
           </div>
@@ -333,37 +334,63 @@ assignConfirmBtn.addEventListener('click', async () => {
   }
 });
 
+function openUserItemDetail(item) {
+  selectedItem = item;
+  const st = getStatusDisplay(item.status);
+  const tp = getTypeDisplay(item.type);
+  document.getElementById('detail-title').textContent = item.title;
+  document.getElementById('detail-sub').textContent =
+    `${item.category?.name || 'Uncategorized'} · Listed ${formatShortDate(item.created_at)}`;
+  document.getElementById('detail-owner').textContent = selectedUser?.name || 'Unknown';
+  document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
+  document.getElementById('detail-type-wrap').innerHTML = `<span class="type-pill ${tp.cls}">${tp.label}</span>`;
+  document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
+
+  const swapWrap = document.getElementById('detail-swap-wrap');
+  if (item.type === 'swap' && item.swap_details?.desired_description) {
+    document.getElementById('detail-swap-desc').textContent = item.swap_details.desired_description;
+    swapWrap.classList.remove('is-hidden');
+  } else {
+    swapWrap.classList.add('is-hidden');
+  }
+
+  const imgEl = document.getElementById('detail-img');
+  if (item.image_url) {
+    imgEl.src = item.image_url;
+    imgEl.classList.remove('is-hidden');
+  } else {
+    imgEl.classList.add('is-hidden');
+  }
+  detailDeleteBtn.disabled = item.status === 'removed';
+  openModalDialog(detailModal);
+}
+
 // Item Details & Delete Modals
 userItemsListEl.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  const item = selectedUserItems.find((i) => String(i.id) === btn.dataset.id);
-  if (!item) return;
-  selectedItem = item;
-
-  if (btn.dataset.action === 'view') {
-    const st = getStatusDisplay(item.status);
-    document.getElementById('detail-title').textContent = item.title;
-    document.getElementById('detail-sub').textContent =
-      `${item.category?.name || 'Uncategorized'} · Listed ${formatShortDate(item.created_at)}`;
-    document.getElementById('detail-owner').textContent = selectedUser?.name || 'Unknown';
-    document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
-    document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
-
-    const imgEl = document.getElementById('detail-img');
-    if (item.image_url) {
-      imgEl.src = item.image_url;
-      imgEl.classList.remove('is-hidden');
-    } else {
-      imgEl.classList.add('is-hidden');
-    }
-    detailDeleteBtn.disabled = item.status === 'removed';
-    openModalDialog(detailModal);
-  } else if (btn.dataset.action === 'delete') {
+  const delBtn = e.target.closest('button[data-action="delete"]');
+  if (delBtn) {
+    const item = selectedUserItems.find((i) => String(i.id) === delBtn.dataset.id);
+    if (!item) return;
+    selectedItem = item;
     deleteError.textContent = '';
     document.getElementById('delete-item-name').textContent = item.title;
     openModalDialog(deleteModal);
+    return;
   }
+  const row = e.target.closest('.user-item-row[data-id]');
+  if (!row) return;
+  const item = selectedUserItems.find((i) => String(i.id) === row.dataset.id);
+  if (item) openUserItemDetail(item);
+});
+
+userItemsListEl.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.closest('button')) return;
+  const row = e.target.closest('.user-item-row[data-id]');
+  if (!row) return;
+  e.preventDefault();
+  const item = selectedUserItems.find((i) => String(i.id) === row.dataset.id);
+  if (item) openUserItemDetail(item);
 });
 
 detailCloseBtn.addEventListener('click', () => closeModalDialog(detailModal));

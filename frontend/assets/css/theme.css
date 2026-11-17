@@ -52,8 +52,16 @@
 
 [data-theme="dark"] .nav-item:hover,
 [data-theme="dark"] .logout-btn:hover,
-[data-theme="dark"] .btn-outline:hover {
+[data-theme="dark"] .btn-outline:hover,
+[data-theme="dark"] .filter-select:hover,
+[data-theme="dark"] .custom-select-trigger:hover,
+[data-theme="dark"] .custom-select-option:hover,
+[data-theme="dark"] .custom-select-option:focus-visible {
   background-color: #352820;
+}
+
+[data-theme="dark"] .filter-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F7F1E6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 
 [data-theme="dark"] .nav-item.active,
@@ -87,6 +95,16 @@
 [data-theme="dark"] .status-removed {
   background-color: #4B2823;
   color: #F5B8AF;
+}
+
+[data-theme="dark"] .type-free {
+  background-color: #263E28;
+  color: #B4DFB8;
+}
+
+[data-theme="dark"] .type-swap {
+  background-color: #46351E;
+  color: #FCEB9B;
 }
 
 /* Auth & Modal Dark Mode Overrides (centralized in theme.css) */
@@ -216,7 +234,7 @@
 
   ::picker(select) {
     min-width: anchor-size(width);
-    max-height: min(340px, 60vh);
+    max-height: none; /* แสดงตัวเลือกครบ ไม่มีแถบเลื่อน (ถ้าจอเตี้ยกว่ารายการ เบราว์เซอร์จะเลื่อนให้เอง) */
     margin-block: 6px;
     padding: 6px;
     border: 1px solid var(--border-soft);
