@@ -72,6 +72,7 @@ function roleAction(user) {
 
 function refreshRoleAction() {
   const action = roleAction(selectedUser);
+  assignAdminBtn.hidden = currentAdmin?.role !== 'super_admin';
   assignAdminBtn.disabled = !action;
   assignAdminBtn.textContent = action?.label ?? 'Change Role';
 }
