@@ -1018,13 +1018,13 @@ a.btn-yellow[hidden] {
 /* ---------- สีกราฟ: เข้มขึ้นให้ไม่กลืนกับพื้นการ์ด ---------- */
 :root {
   --chart-yellow: #E5B32E;
-  --chart-taupe: #B8A385;
+  --chart-taupe: #D98977; /* Cancelled: โทนอิฐอมชมพู แยกจากน้ำตาลของ Completed ชัดเจน */
   --chart-track: #F1E7D2;
 }
 
 [data-theme="dark"] {
   --chart-yellow: #F2CD55;
-  --chart-taupe: #8E7766;
+  --chart-taupe: #D27E6C;
   --chart-track: #3A2C22;
 }
 
