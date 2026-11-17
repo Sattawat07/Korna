@@ -401,3 +401,10 @@
 .card__footer {
   cursor: default;
 }
+
+/* ผู้เยี่ยมชม (ยังไม่ล็อกอิน) */
+.toolbar__signin {
+  height: 52px;
+  padding: 0 28px;
+  border-radius: var(--radius-lg);
+}

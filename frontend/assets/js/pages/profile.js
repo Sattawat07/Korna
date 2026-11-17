@@ -523,10 +523,15 @@ function bindEditItem() {
     try {
       const list = await loadCategories();
       const select = form.elements.namedItem('category_id');
-      select.innerHTML = list.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      const options = list.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      select.innerHTML = options;
       select.value = String(item.category.id);
+      const wanted = form.elements.namedItem('desired_category_id');
+      wanted.innerHTML = `<option value="">Wanted category (any)</option>${options}`;
+      wanted.value = item.swap_details?.desired_category?.id ? String(item.swap_details.desired_category.id) : '';
       form.elements.namedItem('title').value = item.title;
       form.elements.namedItem('description').value = item.description ?? '';
+      form.elements.namedItem('defects').value = item.defects ?? '';
       form.elements.namedItem('desired_description').value = item.swap_details?.desired_description ?? '';
       $('edit-desired-field').hidden = item.type !== 'swap';
       openModal('edit-item-modal');
@@ -544,6 +549,9 @@ function bindEditItem() {
     const title = form.elements.namedItem('title').value.trim();
     const description = form.elements.namedItem('description').value.trim();
     const categoryId = Number(form.elements.namedItem('category_id').value);
+    const defects = form.elements.namedItem('defects').value.trim();
+    const wantedRaw = form.elements.namedItem('desired_category_id').value;
+    const wantedId = wantedRaw ? Number(wantedRaw) : null;
     const desired = form.elements.namedItem('desired_description').value.trim();
     const errors = {};
     if (!title) errors.title = 'Please enter the item name.';
@@ -555,6 +563,8 @@ function bindEditItem() {
     if (title !== item.title) body.title = title;
     if (description !== (item.description ?? '')) body.description = description || null;
     if (categoryId !== item.category.id) body.category_id = categoryId;
+    if (defects !== (item.defects ?? '')) body.defects = defects || null;
+    if (item.type === 'swap' && wantedId !== (item.swap_details?.desired_category?.id ?? null)) body.desired_category_id = wantedId;
     if (item.type === 'swap' && desired !== (item.swap_details?.desired_description ?? '')) body.desired_description = desired;
     if (!Object.keys(body).length) {
       $('edit-item-modal').close();

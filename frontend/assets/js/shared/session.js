@@ -18,6 +18,20 @@ export async function loadMe() {
   }
 }
 
+/**
+ * ข้อมูลผู้ใช้ถ้าล็อกอินอยู่ หรือ null ถ้ายังไม่ล็อกอิน (ไม่พาไปหน้า login)
+ * ใช้กับหน้าที่คนทั่วไปเปิดดูได้ เช่น ฟีด (GET /api/items เปิดให้ผู้ไม่ล็อกอินเรียกได้)
+ */
+export async function loadMeOptional() {
+  try {
+    const data = await request('/me');
+    return data.user ?? null;
+  } catch (error) {
+    if (error.status === 401) return null;
+    throw error;
+  }
+}
+
 /** แปลง error จาก API เป็นข้อความสำหรับแสดงบนหน้าจอ */
 export function errorText(error, fallback = 'Something went wrong. Please try again.') {
   if (!error) return fallback;

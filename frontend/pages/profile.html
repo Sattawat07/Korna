@@ -163,10 +163,20 @@
             <i data-icon="pencil"></i>
             <textarea name="description" rows="3" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
           </label>
+          <label class="soft-input">
+            <i data-icon="file"></i>
+            <input name="defects" placeholder="Defects or condition (optional)" aria-label="ตำหนิหรือสภาพของ (ไม่บังคับ)" />
+          </label>
+          <p class="field-error" data-error-for="defects"></p>
           <label class="soft-input select-wrap">
             <select name="category_id" aria-label="หมวดหมู่" required></select>
           </label>
           <div class="modal__col" id="edit-desired-field" hidden>
+            <label class="soft-input select-wrap">
+              <span class="soft-input__prefix">Want</span>
+              <select name="desired_category_id" aria-label="หมวดของที่อยากได้ (ไม่บังคับ)"></select>
+            </label>
+            <p class="field-error" data-error-for="desired_category_id"></p>
             <label class="soft-input">
               <i data-icon="swap"></i>
               <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />

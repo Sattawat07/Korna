@@ -1,6 +1,6 @@
 // Admin Dashboard page logic — Vanilla JS
 import { request } from '../api.js';
-import { loadAdminProfile, setupLogoutModal } from '../shared/admin-common.js';
+import { escapeHtml, loadAdminProfile, setupLogoutModal } from '../shared/admin-common.js';
 
 function formatShortDate(isoDate) {
   const d = new Date(`${isoDate}T00:00:00`);
@@ -82,6 +82,9 @@ function renderStats(stats) {
   document.getElementById('req-cancelled-count').textContent = rejectedCount;
   document.getElementById('req-cancelled-pct').textContent = `${pct(rejectedCount)}%`;
 
+  renderPostsByType(stats.by_type);
+  renderPostsByCategory(stats.by_category);
+
   // Recent activity
   const recentEl = document.getElementById('recent-activity-list');
   const recent = stats.recent_requests || [];
@@ -104,6 +107,55 @@ function renderStats(stats) {
             </div>
           </div>
           <span class="recent-time">${formatRelativeTime(item.created_at)}</span>
+        </li>
+      `;
+    })
+    .join('');
+}
+
+// จำนวนโพสต์แยก Free / Swap (by_type — รวมโพสต์ที่ถูกลบด้วย ตามที่ API ระบุ)
+function renderPostsByType(byType = {}) {
+  const free = Number(byType.free ?? 0);
+  const swap = Number(byType.swap ?? 0);
+  const total = free + swap;
+  const pct = (n) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+  document.getElementById('type-summary-sub').textContent = `${total} posts total`;
+  document.getElementById('seg-type-free').style.width = `${pct(free)}%`;
+  document.getElementById('seg-type-swap').style.width = `${pct(swap)}%`;
+  document.getElementById('type-free-count').textContent = free;
+  document.getElementById('type-free-pct').textContent = `${pct(free)}%`;
+  document.getElementById('type-swap-count').textContent = swap;
+  document.getElementById('type-swap-pct').textContent = `${pct(swap)}%`;
+}
+
+// จำนวนโพสต์แยกหมวด (by_category) — เรียงมากไปน้อย แสดง 6 หมวดแรก
+const CATEGORY_LIMIT = 6;
+
+function renderPostsByCategory(byCategory = []) {
+  const listEl = document.getElementById('category-bars');
+  const sorted = [...byCategory].filter((c) => Number(c.total) > 0).sort((a, b) => b.total - a.total);
+  const subEl = document.getElementById('category-summary-sub');
+
+  if (sorted.length === 0) {
+    subEl.textContent = 'No posts yet';
+    listEl.innerHTML = '<li class="category-empty">No posts yet.</li>';
+    return;
+  }
+
+  const shown = sorted.slice(0, CATEGORY_LIMIT);
+  const rest = sorted.length - shown.length;
+  subEl.textContent = rest > 0 ? `Top ${shown.length} of ${sorted.length} categories` : `${sorted.length} categories with posts`;
+  const max = Math.max(...shown.map((c) => Number(c.total)));
+
+  listEl.innerHTML = shown
+    .map((c) => {
+      const width = Math.max(4, Math.round((Number(c.total) / max) * 100));
+      return `
+        <li>
+          <span class="category-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+          <span class="category-track" aria-hidden="true"><span class="category-fill" style="width: ${width}%"></span></span>
+          <strong>${Number(c.total)}</strong>
         </li>
       `;
     })

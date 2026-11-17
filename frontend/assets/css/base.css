@@ -413,6 +413,14 @@ html[data-theme='dark'] .icon-btn {
   height: 18px;
 }
 
+/* คำนำหน้าในช่อง เช่น "Want" หน้าช่องเลือกหมวดที่อยากได้ */
+.soft-input__prefix {
+  flex: none;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
 .soft-input input,
 .soft-input textarea,
 .soft-input select {

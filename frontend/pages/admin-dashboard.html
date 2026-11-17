@@ -189,6 +189,48 @@
         </article>
       </section>
 
+      <!-- Posts Row: by type (free/swap) + by category -->
+      <section class="posts-grid">
+        <article class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h3>Posts by type</h3>
+              <p class="panel-sub" id="type-summary-sub">0 posts total</p>
+            </div>
+          </div>
+
+          <div class="stacked-bar" aria-hidden="true">
+            <div class="stacked-seg seg-pending" id="seg-type-free"></div>
+            <div class="stacked-seg seg-completed" id="seg-type-swap"></div>
+          </div>
+
+          <ul class="breakdown-list">
+            <li>
+              <span class="breakdown-label"><span class="legend-dot dot-yellow"></span>Free</span>
+              <strong id="type-free-count">0</strong>
+              <span class="breakdown-pct" id="type-free-pct">0%</span>
+            </li>
+            <li>
+              <span class="breakdown-label"><span class="legend-dot dot-brown"></span>Swap</span>
+              <strong id="type-swap-count">0</strong>
+              <span class="breakdown-pct" id="type-swap-pct">0%</span>
+            </li>
+          </ul>
+        </article>
+
+        <article class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h3>Posts by category</h3>
+              <p class="panel-sub" id="category-summary-sub">Most listed categories</p>
+            </div>
+          </div>
+          <ul class="category-bars" id="category-bars">
+            <!-- Rendered by JS -->
+          </ul>
+        </article>
+      </section>
+
       <!-- Bottom Row: Recent Activity + CTA Card -->
       <section class="bottom-grid">
         <article class="panel-card">

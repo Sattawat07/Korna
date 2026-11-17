@@ -18,7 +18,7 @@
   <body class="feed-page">
     <div class="feed">
       <header class="toolbar">
-        <button class="toolbar__create" type="button" data-open-modal="create-post-modal">
+        <button class="toolbar__create" type="button" data-open-modal="create-post-modal" data-member-only>
           <i data-icon="send"></i>
           Create post...
         </button>
@@ -70,8 +70,9 @@
         </div>
 
         <nav class="toolbar__actions" aria-label="เมนูผู้ใช้">
-          <button class="icon-btn" type="button" aria-label="การแจ้งเตือน" data-notifications><i data-icon="bell"></i></button>
-          <a class="icon-btn" href="./profile.html" aria-label="โปรไฟล์" id="profile-link"><i data-icon="user"></i></a>
+          <button class="icon-btn" type="button" aria-label="การแจ้งเตือน" data-notifications data-member-only><i data-icon="bell"></i></button>
+          <a class="icon-btn" href="./profile.html" aria-label="โปรไฟล์" id="profile-link" data-member-only><i data-icon="user"></i></a>
+          <a class="btn btn--primary toolbar__signin" href="./login.html" data-guest-only hidden>Sign in</a>
         </nav>
       </header>
 
@@ -105,6 +106,11 @@
             <textarea name="description" rows="2" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
             <button class="addon" type="button" data-add-images="post-images" aria-label="เพิ่มรูป" title="Add photos"><i data-icon="imagePlus"></i></button>
           </div>
+          <label class="soft-input">
+            <i data-icon="file"></i>
+            <input name="defects" placeholder="Defects or condition (optional)" aria-label="ตำหนิหรือสภาพของ (ไม่บังคับ)" />
+          </label>
+          <p class="field-error" data-error-for="defects"></p>
           <div class="modal__row">
             <div class="modal__col modal__row-grow">
               <label class="soft-input select-wrap">
@@ -126,6 +132,13 @@
             </div>
           </div>
           <div class="modal__col" id="desired-field" hidden>
+            <label class="soft-input select-wrap">
+              <span class="soft-input__prefix">Want</span>
+              <select name="desired_category_id" aria-label="หมวดของที่อยากได้ (ไม่บังคับ)">
+                <option value="">Wanted category (any)</option>
+              </select>
+            </label>
+            <p class="field-error" data-error-for="desired_category_id"></p>
             <label class="soft-input">
               <i data-icon="swap"></i>
               <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />

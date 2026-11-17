@@ -587,3 +587,69 @@ body {
     border-bottom: 1px solid var(--border-soft);
   }
 }
+
+/* Posts by type / by category */
+.posts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.65fr;
+  gap: 16px;
+}
+
+.category-bars {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.category-bars li {
+  display: grid;
+  grid-template-columns: minmax(110px, 180px) 1fr 32px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.category-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-track {
+  height: 10px;
+  border-radius: 6px;
+  background-color: var(--border-soft);
+  overflow: hidden;
+}
+
+.category-fill {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background-color: var(--accent-yellow-strong, var(--accent-yellow));
+  transition: width 0.25s ease;
+}
+
+.category-bars strong {
+  text-align: right;
+}
+
+.category-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .posts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* โหมดมืด: สีน้ำตาลเข้ม (Completed / Swap) กลืนกับพื้น จึงใช้สีน้ำตาลอ่อนแทน */
+[data-theme="dark"] .seg-completed,
+[data-theme="dark"] .dot-brown,
+[data-theme="dark"] .bar-fill.completed {
+  background-color: #c9a98a;
+}

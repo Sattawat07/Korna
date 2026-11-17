@@ -3,13 +3,13 @@ import { hydrateIcons, icon } from '../shared/icons.js';
 import { escapeHtml, itemStatusLabel } from '../shared/format.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
 import { setupNotifications } from '../shared/notifications.js';
-import { errorText, loadMe } from '../shared/session.js';
+import { errorText, goToLogin, loadMeOptional } from '../shared/session.js';
 import { clearErrorOnInput, clearFieldErrors, openModal, setupModals, setupUploader, showDialog, showFieldErrors, toast } from '../shared/ui.js';
 
 // ---------- สถานะของหน้า ----------
 const PAGE_SIZE = 12;
 const state = { q: '', category_id: '', type: '', range: '', sort: 'newest', view: 'grid', page: 1, totalPages: 1 };
-let me = null;
+let me = null; // null = ผู้เยี่ยมชมที่ยังไม่ล็อกอิน (ดูฟีดได้ แต่โพสต์/ขอของต้องล็อกอินก่อน)
 let items = [];
 let loadToken = 0; // กันผลลัพธ์เก่ามาทับเมื่อเปลี่ยนตัวกรองเร็วๆ
 const requestedIds = new Set(); // id โพสต์ที่ผู้ใช้เคยส่งคำขอแล้ว
@@ -34,12 +34,15 @@ init();
 
 async function init() {
   try {
-    const [meData, categoryData] = await Promise.all([loadMe(), request('/categories')]);
-    me = meData.user;
-    renderProfileLink();
+    const [user, categoryData] = await Promise.all([loadMeOptional(), request('/categories')]);
+    me = user;
+    applyGuestMode(!me);
     fillCategorySelects(categoryData.categories);
-    await loadRequestedIds();
-    setupNotifications();
+    if (me) {
+      renderProfileLink();
+      await loadRequestedIds();
+      setupNotifications();
+    }
   } catch (error) {
     showStatus(errorText(error, 'Unable to load the page. Please try again.'), true);
     return;
@@ -57,6 +60,13 @@ async function loadRequestedIds() {
   }
 }
 
+/** ผู้เยี่ยมชม: ซ่อนปุ่มที่ต้องล็อกอิน (Create post, แจ้งเตือน, โปรไฟล์) แล้วแสดงปุ่ม Sign in แทน */
+function applyGuestMode(isGuest) {
+  document.body.classList.toggle('is-guest', isGuest);
+  document.querySelectorAll('[data-member-only]').forEach((el) => (el.hidden = isGuest));
+  document.querySelectorAll('[data-guest-only]').forEach((el) => (el.hidden = !isGuest));
+}
+
 /** แสดงรูปโปรไฟล์ของฉันในปุ่มโปรไฟล์มุมขวาบน */
 function renderProfileLink() {
   const link = $('profile-link');
@@ -70,7 +80,7 @@ function renderProfileLink() {
 
 function fillCategorySelects(categories) {
   const options = categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  document.querySelectorAll('#filter-category, select[name="category_id"]').forEach((select) => {
+  document.querySelectorAll('#filter-category, select[name="category_id"], select[name="desired_category_id"]').forEach((select) => {
     select.insertAdjacentHTML('beforeend', options);
   });
 }
@@ -247,6 +257,7 @@ cardsEl.addEventListener('click', (event) => {
     return;
   }
   if (btn.disabled) return;
+  if (!me) return goToLogin(); // ผู้เยี่ยมชมต้องล็อกอินก่อนขอของ
   const item = items.find((i) => i.id === Number(btn.dataset.request));
   if (item) openRequest(item);
 });
@@ -287,7 +298,7 @@ async function openItem(id) {
     $('item-modal-owner').textContent = `Posted by ${item.owner.name}`;
     const isMine = me && item.owner.id === me.id;
     const canRequest = !isMine && !requestedIds.has(item.id) && ['available', 'pending'].includes(item.status);
-    let label = 'Request';
+    let label = me ? 'Request' : 'Sign in to request';
     if (isMine) label = 'This is your post';
     else if (requestedIds.has(item.id)) label = 'Requested';
     $('item-modal-body').innerHTML = `
@@ -299,6 +310,7 @@ async function openItem(id) {
       </div>`;
     $('item-modal-request').addEventListener('click', () => {
       dialog.close();
+      if (!me) return goToLogin();
       openRequest(items.find((i) => i.id === item.id) ?? item);
     });
   } catch (error) {
@@ -342,6 +354,8 @@ function bindCreatePost() {
     const categoryId = value('category_id');
     const type = value('type');
     const description = value('description');
+    const defects = value('defects');
+    const desiredCategoryId = value('desired_category_id');
     const desiredDescription = value('desired_description');
 
     const errors = {};
@@ -359,7 +373,11 @@ function bindCreatePost() {
     body.append('category_id', categoryId);
     body.append('type', type);
     if (description) body.append('description', description);
-    if (type === 'swap') body.append('desired_description', desiredDescription);
+    if (defects) body.append('defects', defects);
+    if (type === 'swap') {
+      if (desiredCategoryId) body.append('desired_category_id', desiredCategoryId);
+      body.append('desired_description', desiredDescription);
+    }
     postUploader.files().forEach((file) => body.append('images', file));
 
     await withSubmitting(form, 'Posting...', async () => {
