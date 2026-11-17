@@ -41,7 +41,7 @@ test('PATCH /api/notifications/:id/read updates only the recipient notification'
 	});
 	assert.deepEqual(updates[0].values, [41, 7]);
 	assert.match(updates[0].sql, /SET read_at = COALESCE\(read_at, NOW\(\)\)/);
-	assert.match(updates[0].sql, /WHERE notification_id = \$1 AND recipient_user_id = \$2/);
+	assert.match(updates[0].sql, /WHERE notification_id = \$1 AND recipient_user_id = \$2 AND cleared_at IS NULL/);
 
 	readRows = [{ ...readRows[0], notification_type: 'request_decided', notification_decision: 'accepted' }];
 	const decided = await patch('41');

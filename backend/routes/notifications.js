@@ -36,7 +36,7 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
 				COUNT(*) AS total,
 				COUNT(*) FILTER (WHERE read_at IS NULL) AS unread_count
 			FROM notifications
-			WHERE recipient_user_id = $1`,
+			WHERE recipient_user_id = $1 AND cleared_at IS NULL`,
 			[req.user.id]
 		);
 		const total = Number(countRows[0].total);
@@ -56,7 +56,7 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
 				u.user_avatar_url AS actor_avatar_url
 			FROM notifications n
 			JOIN users u ON u.user_id = n.actor_user_id
-			WHERE n.recipient_user_id = $1
+			WHERE n.recipient_user_id = $1 AND n.cleared_at IS NULL
 			ORDER BY n.created_at DESC, n.notification_id DESC
 			LIMIT $2 OFFSET $3`,
 			[req.user.id, limit, offset]
@@ -102,6 +102,46 @@ notificationsRouter.get('/', requireAuth, async (req, res) => {
 	}
 });
 
+notificationsRouter.delete('/read', requireAuth, async (req, res) => {
+	try {
+		await pool.query(`
+			UPDATE notifications
+			SET cleared_at = NOW()
+			WHERE recipient_user_id = $1 AND read_at IS NOT NULL AND cleared_at IS NULL`,
+			[req.user.id]
+		);
+		return res.status(204).end();
+	} catch (error) {
+		console.error('Failed to clear read notifications:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+});
+
+notificationsRouter.delete('/', requireAuth, async (req, res) => {
+	try {
+		await pool.query(`
+			UPDATE notifications
+			SET cleared_at = NOW()
+			WHERE recipient_user_id = $1 AND cleared_at IS NULL`,
+			[req.user.id]
+		);
+		return res.status(204).end();
+	} catch (error) {
+		console.error('Failed to clear notifications:', error);
+		return res.status(503).json({
+			error: {
+				code: 'DATABASE_UNAVAILABLE',
+				message: 'Database is temporarily unavailable.',
+			},
+		});
+	}
+});
+
 notificationsRouter.patch('/:id/read', requireAuth, async (req, res) => {
 	const idParam = req.params.id;
 	const notificationId = Number(idParam);
@@ -120,7 +160,7 @@ notificationsRouter.patch('/:id/read', requireAuth, async (req, res) => {
 		const { rows } = await pool.query(`
 			UPDATE notifications
 			SET read_at = COALESCE(read_at, NOW())
-			WHERE notification_id = $1 AND recipient_user_id = $2
+			WHERE notification_id = $1 AND recipient_user_id = $2 AND cleared_at IS NULL
 			RETURNING
 				notification_id,
 				notification_type,

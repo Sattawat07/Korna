@@ -102,6 +102,7 @@ CREATE TABLE notifications (
     notification_type VARCHAR(20) NOT NULL,
     notification_decision VARCHAR(10),
     read_at TIMESTAMPTZ,
+    cleared_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT notifications_type_decision_valid CHECK (
         (notification_type = 'request_received' AND notification_decision IS NULL) OR
@@ -121,8 +122,9 @@ CREATE INDEX items_owner_idx ON items (item_owner_id);
 CREATE INDEX requests_item_status_idx ON requests (request_item_id, request_status);
 CREATE INDEX requests_requester_idx ON requests (requester_user_id);
 CREATE INDEX notifications_recipient_created_idx
-    ON notifications (recipient_user_id, created_at DESC, notification_id DESC);
+    ON notifications (recipient_user_id, created_at DESC, notification_id DESC)
+    WHERE cleared_at IS NULL;
 CREATE INDEX notifications_unread_idx
-    ON notifications (recipient_user_id) WHERE read_at IS NULL;
+    ON notifications (recipient_user_id) WHERE read_at IS NULL AND cleared_at IS NULL;
 
 COMMIT;
