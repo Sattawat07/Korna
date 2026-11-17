@@ -260,6 +260,57 @@
     </main>
   </div>
 
+  <!-- Modal: Item Details -->
+  <div class="admin-modal-backdrop" id="item-detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div class="admin-modal-card">
+      <button type="button" class="admin-modal-close" id="detail-close-btn" aria-label="Close">✕</button>
+      <span class="eyebrow">ITEM MODERATION</span>
+      <h3 id="detail-title">Item title</h3>
+      <p class="subtitle" id="detail-sub">Category · Listed date</p>
+      <img id="detail-img" class="modal-detail-img is-hidden" alt="Item preview">
+      <div class="modal-detail-meta">
+        <div>
+          <div class="meta-label">Owner</div>
+          <div class="meta-value" id="detail-owner">—</div>
+        </div>
+        <div>
+          <div class="meta-label">Exchange status</div>
+          <div id="detail-status-wrap"></div>
+        </div>
+        <div>
+          <div class="meta-label">Post type</div>
+          <div id="detail-type-wrap"></div>
+        </div>
+      </div>
+      <div class="is-hidden" id="detail-swap-wrap">
+        <div class="meta-label">Looking to swap for</div>
+        <p class="subtitle" id="detail-swap-desc">—</p>
+      </div>
+      <div>
+        <div class="meta-label">Description</div>
+        <p class="subtitle" id="detail-desc">—</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-yellow" id="detail-delete-btn">Delete item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Delete Item Confirmation -->
+  <div class="admin-modal-backdrop" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+    <div class="admin-modal-card">
+      <button type="button" class="admin-modal-close" id="delete-close-btn" aria-label="Close">✕</button>
+      <h3 id="delete-modal-title">Delete this item?</h3>
+      <p class="subtitle">This will hide the listing from the community.</p>
+      <strong id="delete-item-name">Item</strong>
+      <div class="modal-error" id="delete-error"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" id="delete-cancel-btn">Keep item</button>
+        <button type="button" class="btn-yellow" id="delete-confirm-btn">Delete item</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Logout Confirmation -->
   <div class="admin-modal-backdrop" id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
     <div class="admin-modal-card">

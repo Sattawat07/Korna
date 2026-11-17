@@ -1,6 +1,27 @@
 // Admin Dashboard page logic — Vanilla JS
 import { request } from '../api.js';
-import { escapeHtml, loadAdminProfile, setupLogoutModal } from '../shared/admin-common.js';
+import {
+  closeModalDialog,
+  escapeHtml,
+  formatShortDate as formatFullShortDate,
+  getStatusDisplay,
+  getTypeDisplay,
+  loadAdminProfile,
+  openModalDialog,
+  setupLogoutModal,
+} from '../shared/admin-common.js';
+
+let itemsById = new Map();
+let selectedItem = null;
+
+const detailModal = document.getElementById('item-detail-modal');
+const detailCloseBtn = document.getElementById('detail-close-btn');
+const detailDeleteBtn = document.getElementById('detail-delete-btn');
+const deleteModal = document.getElementById('delete-modal');
+const deleteCloseBtn = document.getElementById('delete-close-btn');
+const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+const deleteError = document.getElementById('delete-error');
 
 function formatShortDate(isoDate) {
   const d = new Date(`${isoDate}T00:00:00`);
@@ -47,20 +68,30 @@ function renderStats(stats) {
     .map((day) => {
       const acc = day.accepted || 0;
       const pen = day.pending || 0;
+      const rej = day.rejected || 0;
+      const totalDay = acc + pen + rej;
       const accHeight = Math.round((acc / maxVal) * 95);
       const penHeight = Math.round((pen / maxVal) * 95);
+      const shortDate = formatShortDate(day.date);
       return `
-        <div class="bar-day">
+        <div class="bar-day" tabindex="0" aria-label="${shortDate}: ${acc} completed, ${pen} pending, ${rej} cancelled">
+          <div class="chart-tooltip" role="tooltip">
+            <div class="tooltip-title">${shortDate} · ${totalDay} requests</div>
+            <div class="tooltip-row"><span class="legend-dot dot-brown"></span>Completed: <strong>${acc}</strong></div>
+            <div class="tooltip-row"><span class="legend-dot dot-yellow"></span>Pending: <strong>${pen}</strong></div>
+            <div class="tooltip-row"><span class="legend-dot dot-taupe"></span>Cancelled: <strong>${rej}</strong></div>
+          </div>
           <div class="bar-pair">
             <div class="bar-col">
               <span class="bar-count">${acc}</span>
-              <div class="bar-fill completed" style="height: ${accHeight}px" title="Completed: ${acc}"></div>
+              <div class="bar-fill completed" style="height: ${accHeight}px"></div>
             </div>
             <div class="bar-col">
-              <div class="bar-fill pending" style="height: ${penHeight}px" title="Pending: ${pen}"></div>
+              <span class="bar-count">${pen > 0 ? pen : ''}</span>
+              <div class="bar-fill pending" style="height: ${penHeight}px"></div>
             </div>
           </div>
-          <span class="bar-date">${formatShortDate(day.date)}</span>
+          <span class="bar-date">${shortDate}</span>
         </div>
       `;
     })
@@ -71,9 +102,17 @@ function renderStats(stats) {
   const pct = (n) => (reqTotal > 0 ? Math.round((n / reqTotal) * 100) : 0);
 
   document.getElementById('requests-summary-sub').textContent = `${reqTotal} requests total`;
-  document.getElementById('seg-completed').style.width = `${pct(acceptedCount)}%`;
-  document.getElementById('seg-pending').style.width = `${pct(pendingCount)}%`;
-  document.getElementById('seg-cancelled').style.width = `${pct(rejectedCount)}%`;
+  const segCompleted = document.getElementById('seg-completed');
+  const segPending = document.getElementById('seg-pending');
+  const segCancelled = document.getElementById('seg-cancelled');
+
+  segCompleted.style.width = `${pct(acceptedCount)}%`;
+  segPending.style.width = `${pct(pendingCount)}%`;
+  segCancelled.style.width = `${pct(rejectedCount)}%`;
+
+  segCompleted.dataset.tooltip = `Completed: ${acceptedCount} requests (${pct(acceptedCount)}%)`;
+  segPending.dataset.tooltip = `Pending: ${pendingCount} requests (${pct(pendingCount)}%)`;
+  segCancelled.dataset.tooltip = `Cancelled: ${rejectedCount} requests (${pct(rejectedCount)}%)`;
 
   document.getElementById('req-completed-count').textContent = acceptedCount;
   document.getElementById('req-completed-pct').textContent = `${pct(acceptedCount)}%`;
@@ -94,19 +133,25 @@ function renderStats(stats) {
   }
 
   recentEl.innerHTML = recent
-    .map((item) => {
-      const dotClass = item.status === 'accepted' ? 'dot-brown' : item.status === 'pending' ? 'dot-yellow' : 'dot-taupe';
-      const statusLabel = item.status === 'accepted' ? 'Completed' : item.status === 'rejected' ? 'Cancelled' : 'Pending';
+    .map((reqItem) => {
+      const dotClass = reqItem.status === 'accepted' ? 'dot-brown' : reqItem.status === 'pending' ? 'dot-yellow' : 'dot-taupe';
+      const statusLabel = reqItem.status === 'accepted' ? 'Completed' : reqItem.status === 'rejected' ? 'Cancelled' : 'Pending';
+      const fullItem = itemsById.get(Number(reqItem.item_id));
+      const itemLabel = fullItem
+        ? `${escapeHtml(fullItem.title)} · by ${escapeHtml(fullItem.owner?.name || 'Unknown')}`
+        : `Item #${escapeHtml(reqItem.item_id)}`;
       return `
         <li class="recent-item">
-          <div class="recent-left">
-            <span class="legend-dot ${dotClass}"></span>
-            <div>
-              <div class="recent-title">Request #${item.id} · ${statusLabel}</div>
-              <div class="recent-desc">Item #${item.item_id}</div>
+          <button type="button" class="recent-item-btn" data-item-id="${escapeHtml(reqItem.item_id)}">
+            <div class="recent-left">
+              <span class="legend-dot ${dotClass}"></span>
+              <div>
+                <div class="recent-title">Request #${escapeHtml(reqItem.id)} · ${statusLabel}</div>
+                <div class="recent-desc">${itemLabel}</div>
+              </div>
             </div>
-          </div>
-          <span class="recent-time">${formatRelativeTime(item.created_at)}</span>
+            <span class="recent-time">${formatRelativeTime(reqItem.created_at)}</span>
+          </button>
         </li>
       `;
     })
@@ -162,11 +207,101 @@ function renderPostsByCategory(byCategory = []) {
     .join('');
 }
 
+function openDetailModal(item) {
+  selectedItem = item;
+  const st = getStatusDisplay(item.status);
+  const tp = getTypeDisplay(item.type);
+  document.getElementById('detail-title').textContent = item.title;
+  document.getElementById('detail-sub').textContent =
+    `${item.category?.name || 'Uncategorized'} · Listed ${formatFullShortDate(item.created_at)}`;
+  document.getElementById('detail-owner').textContent = item.owner?.name || 'Unknown';
+  document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
+  document.getElementById('detail-type-wrap').innerHTML = `<span class="type-pill ${tp.cls}">${tp.label}</span>`;
+  document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
+
+  const swapWrap = document.getElementById('detail-swap-wrap');
+  if (item.type === 'swap' && item.swap_details?.desired_description) {
+    document.getElementById('detail-swap-desc').textContent = item.swap_details.desired_description;
+    swapWrap.classList.remove('is-hidden');
+  } else {
+    swapWrap.classList.add('is-hidden');
+  }
+
+  const imgEl = document.getElementById('detail-img');
+  if (item.image_url) {
+    imgEl.src = item.image_url;
+    imgEl.classList.remove('is-hidden');
+  } else {
+    imgEl.classList.add('is-hidden');
+  }
+
+  detailDeleteBtn.disabled = item.status === 'removed';
+  openModalDialog(detailModal);
+}
+
+document.getElementById('recent-activity-list')?.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-item-id]');
+  if (!btn) return;
+  const itemId = Number(btn.dataset.itemId);
+  let item = itemsById.get(itemId);
+  if (!item) {
+    try {
+      const res = await request(`/items/${itemId}`);
+      item = res.item;
+    } catch {
+      try {
+        const remRes = await request('/admin/items?status=removed&limit=50');
+        item = (remRes.items || []).find((i) => Number(i.id) === itemId) || null;
+      } catch {
+        return;
+      }
+    }
+  }
+  if (item) openDetailModal(item);
+});
+
+detailCloseBtn?.addEventListener('click', () => closeModalDialog(detailModal));
+detailModal?.addEventListener('click', (e) => {
+  if (e.target === detailModal) closeModalDialog(detailModal);
+});
+detailDeleteBtn?.addEventListener('click', () => {
+  closeModalDialog(detailModal);
+  if (selectedItem) {
+    deleteError.textContent = '';
+    document.getElementById('delete-item-name').textContent = selectedItem.title;
+    openModalDialog(deleteModal);
+  }
+});
+
+deleteCloseBtn?.addEventListener('click', () => closeModalDialog(deleteModal));
+deleteCancelBtn?.addEventListener('click', () => closeModalDialog(deleteModal));
+deleteModal?.addEventListener('click', (e) => {
+  if (e.target === deleteModal) closeModalDialog(deleteModal);
+});
+deleteConfirmBtn?.addEventListener('click', async () => {
+  if (!selectedItem) return;
+  deleteConfirmBtn.disabled = true;
+  deleteError.textContent = '';
+  try {
+    await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
+    closeModalDialog(deleteModal);
+    await initDashboard();
+  } catch (error) {
+    deleteError.textContent = error.message || 'Unable to delete item.';
+  } finally {
+    deleteConfirmBtn.disabled = false;
+  }
+});
+
 async function initDashboard() {
   await loadAdminProfile(document.getElementById('admin-name'));
 
   try {
-    const stats = await request('/admin/stats');
+    const [stats, itemsRes] = await Promise.all([
+      request('/admin/stats'),
+      request('/admin/items?limit=50').catch(() => ({ items: [] })),
+    ]);
+    itemsById = new Map((itemsRes.items || []).map((i) => [Number(i.id), i]));
     renderStats(stats);
   } catch (error) {
     const listEl = document.getElementById('recent-activity-list');
