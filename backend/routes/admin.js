@@ -4,7 +4,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const adminRouter = Router();
 
-adminRouter.use(requireAuth, requireRole('admin'));
+adminRouter.use(requireAuth, requireRole('admin', 'super_admin'));
 
 function mapItem(row) {
 	return {
@@ -379,23 +379,60 @@ adminRouter.delete('/items/:id', async (req, res) => {
 	}
 });
 
-adminRouter.patch('/users/:id/role', async (req, res) => {
+adminRouter.patch('/users/:id/role', requireRole('super_admin'), async (req, res) => {
 	const userId = Number(req.params.id);
 	const details = {};
 	if (!/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(userId))
 		details.id = 'Enter a valid user ID';
-	if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body) || req.body.role !== 'admin')
-		details.role = 'Role must be admin';
+	if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body) ||
+		!['admin', 'user'].includes(req.body.role))
+		details.role = 'Role must be admin or user';
 	if (Object.keys(details).length > 0) {
 		return res.status(400).json({
 			error: { code: 'VALIDATION_ERROR', message: 'Please check the submitted fields.', details },
 		});
 	}
+	if (userId === req.user.id) {
+		return res.status(409).json({
+			error: { code: 'INVALID_STATE', message: 'You cannot change your own role.' },
+		});
+	}
 
+	let client;
 	try {
-		const { rows } = await pool.query(`
+		client = await pool.connect();
+		await client.query('BEGIN');
+		// Serialize role changes so two requests cannot remove the last super admin together.
+		await client.query('LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE');
+		const { rows: actorRows } = await client.query(
+			'SELECT role FROM users WHERE user_id = $1', [req.user.id]);
+		if (actorRows[0]?.role !== 'super_admin') {
+			await client.query('ROLLBACK');
+			return res.status(403).json({
+				error: { code: 'FORBIDDEN', message: 'You do not have permission to change roles.' },
+			});
+		}
+		const { rows: targetRows } = await client.query(
+			'SELECT role FROM users WHERE user_id = $1', [userId]);
+		if (targetRows.length === 0) {
+			await client.query('ROLLBACK');
+			return res.status(404).json({
+				error: { code: 'NOT_FOUND', message: 'User not found.' },
+			});
+		}
+		if (targetRows[0].role === 'super_admin') {
+			const { rows: countRows } = await client.query(
+				"SELECT COUNT(*) AS total FROM users WHERE role = 'super_admin'");
+			if (Number(countRows[0].total) <= 1) {
+				await client.query('ROLLBACK');
+				return res.status(409).json({
+					error: { code: 'INVALID_STATE', message: 'At least one super admin is required.' },
+				});
+			}
+		}
+		const { rows } = await client.query(`
 			WITH updated AS (
-				UPDATE users SET role = 'admin' WHERE user_id = $1
+				UPDATE users SET role = $2 WHERE user_id = $1
 				RETURNING user_id, user_name, user_email, role, user_avatar_url,
 					user_room_number, user_phone_number, user_created_at
 			)
@@ -404,30 +441,31 @@ adminRouter.patch('/users/:id/role', async (req, res) => {
 				u.user_room_number, u.user_phone_number, u.user_created_at,
 				(SELECT COUNT(*) FROM items i
 					WHERE i.item_owner_id = u.user_id AND i.item_status <> 'removed') AS items_count
-			FROM updated u`, [userId]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				error: { code: 'NOT_FOUND', message: 'User not found.' },
-			});
-		}
+			FROM updated u`, [userId, req.body.role]);
 		const row = rows[0];
-		return res.status(200).json({
-			user: {
-				id: Number(row.user_id),
-				name: row.user_name,
-				avatar_url: row.user_avatar_url,
-				email: row.user_email,
-				role: row.role,
-				room_number: row.user_room_number,
-				phone_number: row.user_phone_number,
-				created_at: row.user_created_at,
-				items_count: Number(row.items_count),
-			},
-		});
+		const user = {
+			id: Number(row.user_id),
+			name: row.user_name,
+			avatar_url: row.user_avatar_url,
+			email: row.user_email,
+			role: row.role,
+			room_number: row.user_room_number,
+			phone_number: row.user_phone_number,
+			created_at: row.user_created_at,
+			items_count: Number(row.items_count),
+		};
+		await client.query('COMMIT');
+		return res.status(200).json({ user });
 	} catch (error) {
-		console.error('Failed to assign admin role:', error);
+		if (client) {
+			try { await client.query('ROLLBACK'); }
+			catch (rollbackError) { console.error('Failed to roll back role change:', rollbackError); }
+		}
+		console.error('Failed to change user role:', error);
 		return res.status(503).json({
 			error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' },
 		});
+	} finally {
+		client?.release();
 	}
 });

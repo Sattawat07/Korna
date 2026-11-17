@@ -42,17 +42,18 @@ export function getStatusDisplay(status) {
   }
 }
 
-export async function loadAdminProfile(nameEl) {
+export async function loadAdminProfile(nameEl, onLoaded) {
   const verifyAdmin = async () => {
     try {
       const me = await request('/me');
-      if (me?.user?.role !== 'admin') {
+      if (!['admin', 'super_admin'].includes(me?.user?.role)) {
         window.location.replace('login.html');
         return;
       }
       if (me.user.name && nameEl) {
         nameEl.textContent = me.user.name;
       }
+      onLoaded?.(me.user);
     } catch {
       window.location.replace('login.html');
     }
