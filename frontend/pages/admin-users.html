@@ -135,7 +135,7 @@
                   </div>
                 </div>
               </div>
-              <button type="button" class="btn-yellow" id="assign-admin-btn" disabled>Assign Admin</button>
+              <button type="button" class="btn-yellow" id="assign-admin-btn" hidden disabled>Change Role</button>
             </div>
 
             <div class="user-meta-grid">
@@ -171,13 +171,13 @@
     </main>
   </div>
 
-  <!-- Modal: Assign Admin Confirmation -->
+  <!-- Modal: Role Change Confirmation -->
   <div class="admin-modal-backdrop" id="assign-modal" role="dialog" aria-modal="true" aria-labelledby="assign-modal-title">
     <div class="admin-modal-card">
       <button type="button" class="admin-modal-close" id="assign-close-btn" aria-label="Close">✕</button>
       <h3 id="assign-modal-title">Assign Admin?</h3>
       <strong id="assign-user-name">Member</strong>
-      <p class="subtitle">Admins can moderate listings, view all members, and assign other admins.</p>
+      <p class="subtitle" id="assign-modal-description">Confirm this role change.</p>
       <div class="modal-error" id="assign-error"></div>
       <div class="modal-actions">
         <button type="button" class="btn-outline" id="assign-cancel-btn">Cancel</button>

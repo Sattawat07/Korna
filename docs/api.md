@@ -16,10 +16,10 @@
 - วันที่เป็น ISO 8601 เช่น `2026-10-18T10:00:00.000Z`; ID เป็นตัวเลข
 - หลังล็อกอิน browser รับ session cookie `sid` แบบ `HttpOnly`, `SameSite=Lax`; frontend เรียก API ด้วย URL ที่ขึ้นต้น `/api` โดย browser ส่ง cookie ให้เอง
 - endpoint ที่ต้องล็อกอินแต่ไม่มี session ที่ใช้ได้ตอบ `401 UNAUTHENTICATED`; สิทธิ์ไม่พอตอบ `403 FORBIDDEN`
-- บัญชีใหม่มี role `user` เสมอ; `admin` กำหนดโดยผู้ดูแลระบบเท่านั้น ไม่รับ role จากแบบฟอร์มสมัคร
+- บัญชีใหม่มี role `user` เสมอ; `admin` มอบหรือถอดโดย `super_admin` เท่านั้น ไม่รับ role จากแบบฟอร์มสมัคร
 - OTP สมัครสมาชิกส่งทางอีเมล อายุ 5 นาที ใช้ครั้งเดียว และเก็บข้อมูลที่รอยืนยันในหน่วยความจำของ Node.js; browser ถือ cookie `signup_challenge` เพื่ออ้างถึงรายการที่รอยืนยัน ไม่ใช่ cookie ล็อกอิน
 - รูปอยู่ใน `images` เรียงตามลำดับที่อัปโหลด; `image_url` คือรูปแรกสำหรับการ์ด ถ้าไม่มีรูปให้ใช้ placeholder ของหน้าเว็บ
-- คำใน UI `Exchanged` หมายถึง `items.status=completed`; ระบบยังใช้ role เพียง `user` และ `admin`
+- คำใน UI `Exchanged` หมายถึง `items.status=completed`; role ในระบบคือ `user`, `admin` และ `super_admin`
 
 ### รูปแบบ error
 
@@ -102,15 +102,15 @@
 
 | Method | Path | ใช้ในส่วน | สิทธิ์ |
 | --- | --- | --- | --- |
-| GET | `/api/admin/stats` | Dashboard และกราฟ | admin |
-| GET | `/api/admin/items` | รายการโพสต์และค้นหา | admin |
-| GET | `/api/admin/users` | รายชื่อสมาชิกและค้นหา | admin |
-| DELETE | `/api/admin/items/:id` | ซ่อนโพสต์ | admin |
-| PATCH | `/api/admin/users/:id/role` | มอบสิทธิ์ admin | admin |
+| GET | `/api/admin/stats` | Dashboard และกราฟ | admin, super_admin |
+| GET | `/api/admin/items` | รายการโพสต์และค้นหา | admin, super_admin |
+| GET | `/api/admin/users` | รายชื่อสมาชิกและค้นหา | admin, super_admin |
+| DELETE | `/api/admin/items/:id` | ซ่อนโพสต์ | admin, super_admin |
+| PATCH | `/api/admin/users/:id/role` | มอบหรือถอดสิทธิ์ admin | super_admin |
 
 กรณี `เจ้าของ` API ตรวจ user ID จาก session ว่าตรงกับเจ้าของโพสต์; API admin ตรวจ role ปัจจุบันของผู้ใช้จากฐานข้อมูล
 
-ทุก route ที่ต้องล็อกอินตรวจ session ก่อนทำงาน ส่วน route ผู้ดูแลระบบตรวจ role `admin` เพิ่ม โดยใช้ role ปัจจุบันจากฐานข้อมูล
+ทุก route ที่ต้องล็อกอินตรวจ session ก่อนทำงาน ส่วน route ผู้ดูแลระบบตรวจ role `admin` หรือ `super_admin` เพิ่ม โดยใช้ role ปัจจุบันจากฐานข้อมูล; การเปลี่ยน role ต้องเป็น `super_admin`
 
 ## Health checks
 
@@ -445,7 +445,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ## ผู้ดูแลระบบ
 
-ทุก endpoint ในส่วนนี้ต้องมี login session และ role `admin` ถ้าไม่มี session ตอบ `401 UNAUTHENTICATED`; ถ้า role ไม่ใช่ `admin` ตอบ `403 FORBIDDEN` admin คนแรกตั้ง role ในฐานข้อมูลหลังสมัครและยืนยันอีเมลเรียบร้อยแล้ว
+ทุก endpoint ในส่วนนี้ต้องมี login session และ role `admin` หรือ `super_admin` ถ้าไม่มี session ตอบ `401 UNAUTHENTICATED`; ถ้า role ไม่ใช่สองค่านี้ตอบ `403 FORBIDDEN` ส่วนการเปลี่ยน role อนุญาตเฉพาะ `super_admin` บัญชีหลักต้องสมัครและยืนยันอีเมลก่อนยกระดับด้วย `db/add_super_admin.sql`
 
 ### GET /api/admin/stats
 
@@ -495,7 +495,7 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 }
 ```
 
-`items_count` นับโพสต์ที่ยังไม่ `removed`; เมื่อเลือกสมาชิก ใช้ `GET /api/admin/items?owner_id=<id>` แสดงโพสต์ของคนนั้น ไม่มี role `super_admin` ในระบบ
+`items_count` นับโพสต์ที่ยังไม่ `removed`; เมื่อเลือกสมาชิก ใช้ `GET /api/admin/items?owner_id=<id>` แสดงโพสต์ของคนนั้น
 
 ### DELETE /api/admin/items/:id
 
@@ -503,4 +503,4 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 ### PATCH /api/admin/users/:id/role
 
-ส่ง JSON `{"role":"admin"}` เพื่อมอบสิทธิ์ให้บัญชีที่มีอยู่ ตอบ `200 {"user":{ ... }}` โดยใช้รูปแบบ `user` เดียวกับ `GET /api/admin/users` และไม่ส่ง password hash หรือ salt กลับ หากบัญชีเป็น `admin` อยู่แล้วให้ตอบ `200` พร้อมข้อมูลปัจจุบัน ผู้ใช้ที่ไม่มีตอบ `404 NOT_FOUND`; role อื่นหรือการลดสิทธิ์ยังไม่อยู่ในสัญญานี้
+เฉพาะ `super_admin` ส่ง JSON `{"role":"admin"}` เพื่อมอบสิทธิ์ หรือ `{"role":"user"}` เพื่อถอดสิทธิ์ ตอบ `200 {"user":{ ... }}` โดยใช้รูปแบบ `user` เดียวกับ `GET /api/admin/users` และไม่ส่ง password hash หรือ salt กลับ การส่ง role เดิมซ้ำตอบ `200`; ผู้ใช้ที่ไม่มีตอบ `404 NOT_FOUND` ห้ามเปลี่ยน role ของตัวเอง และห้ามลดสิทธิ์ `super_admin` คนสุดท้าย (ตอบ `409 INVALID_STATE`) การส่ง `{"role":"super_admin"}` หรือ role อื่นตอบ `400 VALIDATION_ERROR`

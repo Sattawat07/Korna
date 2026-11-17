@@ -43,6 +43,8 @@ const deleteError = document.getElementById('delete-error');
 let users = [];
 let currentUsersPage = 1;
 let selectedUser = null;
+let currentAdmin = null;
+let pendingRoleChange = null;
 let selectedUserItems = [];
 let selectedItem = null;
 let searchTimer = null;
@@ -50,6 +52,30 @@ let loadUsersSeq = 0;
 let loadUserItemsSeq = 0;
 let userItemsPage = 1;
 let userItemsTotalPages = 1;
+
+function roleLabel(role) {
+  if (role === 'super_admin') return 'Super Admin';
+  if (role === 'admin') return 'Admin';
+  return 'Member';
+}
+
+function roleAction(user) {
+  if (!user || currentAdmin?.role !== 'super_admin' || user.id === currentAdmin.id) return null;
+  if (user.role === 'user') {
+    return { role: 'admin', label: 'Assign Admin', title: 'Assign Admin?',
+      description: 'This member will be able to view admin pages and moderate listings.' };
+  }
+  return { role: 'user', label: user.role === 'super_admin' ? 'Remove Super Admin' : 'Remove Admin',
+    title: 'Remove admin access?',
+    description: 'This member will lose access to admin pages and listing moderation.' };
+}
+
+function refreshRoleAction() {
+  const action = roleAction(selectedUser);
+  assignAdminBtn.hidden = currentAdmin?.role !== 'super_admin';
+  assignAdminBtn.disabled = !action;
+  assignAdminBtn.textContent = action?.label ?? 'Change Role';
+}
 
 async function loadUsers() {
   const seq = ++loadUsersSeq;
@@ -110,7 +136,7 @@ function clearSelectedUser() {
   document.getElementById('selected-user-items-count').textContent = '0';
 
   assignAdminBtn.disabled = true;
-  assignAdminBtn.textContent = 'Assign Admin';
+  assignAdminBtn.textContent = 'Change Role';
 
   document.getElementById('user-items-sub').textContent = 'Select a member to view their listings.';
   userItemsListEl.innerHTML = '';
@@ -126,7 +152,7 @@ function renderUsersList() {
   usersListEl.innerHTML = users
     .map((u) => {
       const isActive = selectedUser?.id === u.id ? 'active' : '';
-      const roleLabel = u.role === 'admin' ? 'Admin' : 'Member';
+      const label = roleLabel(u.role);
       return `
         <button type="button" class="user-row-btn ${isActive}" data-user-id="${escapeHtml(u.id)}">
           <div class="user-row-left">
@@ -137,7 +163,7 @@ function renderUsersList() {
             </span>
             <div>
               <div class="user-row-name">${escapeHtml(u.name)}</div>
-              <div class="user-row-meta">${roleLabel} · ${Number(u.items_count ?? 0)} listed items</div>
+              <div class="user-row-meta">${label} · ${Number(u.items_count ?? 0)} listed items</div>
             </div>
           </div>
           <span aria-hidden="true">&rsaquo;</span>
@@ -154,15 +180,14 @@ async function selectUser(user) {
   document.getElementById('selected-user-name').textContent = user.name;
   document.getElementById('selected-user-email').textContent = user.email;
   const roleBadge = document.getElementById('selected-user-role');
-  roleBadge.textContent = user.role === 'admin' ? 'Admin' : 'Member';
-  roleBadge.className = `status-pill ${user.role === 'admin' ? 'status-completed' : 'status-available'}`;
+  roleBadge.textContent = roleLabel(user.role);
+  roleBadge.className = `status-pill ${user.role === 'super_admin' ? 'status-pending' : user.role === 'admin' ? 'status-completed' : 'status-available'}`;
   document.getElementById('selected-user-joined').textContent = `Joined ${formatShortDate(user.created_at)}`;
   document.getElementById('selected-user-room').textContent = user.room_number || '—';
   document.getElementById('selected-user-phone').textContent = user.phone_number || '—';
   document.getElementById('selected-user-items-count').textContent = user.items_count ?? 0;
 
-  assignAdminBtn.disabled = user.role === 'admin';
-  assignAdminBtn.textContent = user.role === 'admin' ? 'Already Admin' : 'Assign Admin';
+  refreshRoleAction();
 
   document.getElementById('user-items-sub').textContent = `Manage ${user.name}'s listings without leaving this profile.`;
   await loadUserItems(user.id, 1);
@@ -265,11 +290,16 @@ usersNextBtn.addEventListener('click', () => {
   loadUsers();
 });
 
-// Assign Admin Modal
+// Role change confirmation
 assignAdminBtn.addEventListener('click', () => {
-  if (!selectedUser) return;
+  const action = roleAction(selectedUser);
+  if (!action) return;
+  pendingRoleChange = { userId: selectedUser.id, role: action.role };
   assignError.textContent = '';
   document.getElementById('assign-user-name').textContent = selectedUser.name;
+  document.getElementById('assign-modal-title').textContent = action.title;
+  document.getElementById('assign-modal-description').textContent = action.description;
+  assignConfirmBtn.textContent = action.label;
   openModalDialog(assignModal);
 });
 
@@ -280,21 +310,24 @@ assignModal.addEventListener('click', (e) => {
 });
 
 assignConfirmBtn.addEventListener('click', async () => {
-  if (!selectedUser) return;
+  if (!pendingRoleChange || currentAdmin?.role !== 'super_admin') return;
+  const { userId, role } = pendingRoleChange;
   assignConfirmBtn.disabled = true;
   assignError.textContent = '';
 
   try {
-    const res = await request(`/admin/users/${selectedUser.id}/role`, {
+    const res = await request(`/admin/users/${userId}/role`, {
       method: 'PATCH',
-      body: { role: 'admin' },
+      body: { role },
     });
-    const updated = res.user || { ...selectedUser, role: 'admin' };
-    users = users.map((u) => (u.id === selectedUser.id ? { ...u, role: updated.role } : u));
+    const updated = res.user;
+    users = users.map((u) => (u.id === userId ? { ...u, role: updated.role } : u));
+    pendingRoleChange = null;
     closeModalDialog(assignModal);
-    await selectUser({ ...selectedUser, role: updated.role });
+    if (selectedUser?.id === userId) await selectUser({ ...selectedUser, role: updated.role });
+    else renderUsersList();
   } catch (error) {
-    assignError.textContent = error.message || 'Unable to assign admin role.';
+    assignError.textContent = error.message || 'Unable to change role.';
   } finally {
     assignConfirmBtn.disabled = false;
   }
@@ -367,7 +400,10 @@ deleteConfirmBtn.addEventListener('click', async () => {
   }
 });
 
-loadAdminProfile(document.getElementById('admin-name'));
+loadAdminProfile(document.getElementById('admin-name'), (user) => {
+  currentAdmin = user;
+  refreshRoleAction();
+});
 setupLogoutModal({
   triggerBtn: document.getElementById('logout-btn'),
   modal: document.getElementById('logout-modal'),

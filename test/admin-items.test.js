@@ -72,6 +72,10 @@ test('GET /api/admin/items filters and paginates all item statuses for admins', 
 	assert.match(queries[1].sql, /ORDER BY i\.item_created_at DESC, i\.item_id DESC/);
 	assert.deepEqual(queries[1].values, [12, 0]);
 
+	role = 'super_admin';
+	assert.equal((await fetch(url)).status, 200);
+	role = 'admin';
+
 	queries.length = 0;
 	const filtered = await fetch(`${url}?q=Nina&owner_id=8&status=removed&type=swap&category_id=4&page=2&limit=1`);
 	assert.equal(filtered.status, 200);

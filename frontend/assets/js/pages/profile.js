@@ -44,7 +44,7 @@ async function init() {
     me = data.user;
     stats = data.stats;
     renderMe();
-    if ($('admin-link')) $('admin-link').hidden = me?.role !== 'admin';
+    if ($('admin-link')) $('admin-link').hidden = !['admin', 'super_admin'].includes(me?.role);
     renderStats();
     setupNotifications();
   } catch (error) {

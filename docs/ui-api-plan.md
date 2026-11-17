@@ -23,7 +23,7 @@
 
 ## 3. คำบนหน้าจอ
 
-- Role ในระบบมี `user` และ `admin` เท่านั้น ปุ่ม “Assign Super Admin” ในแบบต้องใช้คำว่า “Assign Admin”
+- Role ในระบบมี `user`, `admin` และ `super_admin`; เฉพาะ `super_admin` มอบหรือถอดสิทธิ์ `admin` ได้
 - `items.completed` แสดงเป็น “Exchanged” ได้สำหรับโพสต์ swap; โพสต์ free ที่จบแล้วควรแสดง “Completed”
 - การลบโพสต์เปลี่ยน `item_status` เป็น `removed` ข้อความยืนยันควรบอกว่าโพสต์ถูกซ่อนจากชุมชน ไม่ใช่ลบข้อมูลถาวร
 - สถานะคำขอใน API คือ `pending`, `accepted`, `rejected` โดย UI แสดง `accepted` เป็น “Completed” และ `rejected` เป็น “Cancelled” ตามข้อตกลง ไม่มี flow ผู้ส่งยกเลิกคำขอเอง

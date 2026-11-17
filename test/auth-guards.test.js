@@ -87,4 +87,14 @@ test('requireRole uses the current database role', async (t) => {
 	requireRole('admin')(req, secondResponse, () => { continued = true; });
 	assert.equal(continued, true);
 	assert.equal(secondResponse.statusCode, 200);
+
+	role = 'super_admin';
+	const thirdResponse = response();
+	await requireAuth(req, thirdResponse, () => {});
+	requireRole('admin', 'super_admin')(req, thirdResponse, () => { continued = true; });
+	assert.equal(thirdResponse.statusCode, 200);
+	continued = false;
+	requireRole('admin')(req, thirdResponse, () => { continued = true; });
+	assert.equal(continued, false);
+	assert.equal(thirdResponse.statusCode, 403);
 });
