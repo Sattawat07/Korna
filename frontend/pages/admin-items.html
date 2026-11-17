@@ -102,12 +102,10 @@
           <input type="search" class="search-input" id="items-search" placeholder="Search item name or owner">
         </div>
 
-        <select class="filter-select" id="status-select" aria-label="Filter by status">
-          <option value="">Exchange status</option>
-          <option value="available">Available</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Exchanged</option>
-          <option value="removed">Removed</option>
+        <select class="filter-select" id="type-select" aria-label="Filter by post type">
+          <option value="">All types</option>
+          <option value="free">Free</option>
+          <option value="swap">Swap</option>
         </select>
 
         <select class="filter-select" id="category-select" aria-label="Filter by category">
@@ -122,8 +120,9 @@
           <button type="button" class="tab-btn" data-status="available">Available</button>
           <button type="button" class="tab-btn" data-status="pending">Pending</button>
           <button type="button" class="tab-btn" data-status="completed">Exchanged</button>
+          <button type="button" class="tab-btn" data-status="removed">Removed</button>
         </div>
-        <span class="items-count-label" id="items-total-label">All items</span>
+        <button type="button" class="btn-outline" id="reset-filters-btn">Reset filters</button>
       </section>
 
       <!-- Items Table -->
@@ -145,11 +144,11 @@
           </tbody>
         </table>
         <div class="table-footer">
+          <span class="items-count-label" id="items-total-label">All items</span>
           <div class="action-group">
             <button type="button" class="btn-outline" id="prev-page-btn" disabled>Previous</button>
             <button type="button" class="btn-outline" id="next-page-btn" disabled>Next</button>
           </div>
-          <button type="button" class="btn-outline" id="reset-filters-btn">Reset filters</button>
         </div>
       </section>
     </main>
@@ -172,6 +171,14 @@
           <div class="meta-label">Exchange status</div>
           <div id="detail-status-wrap"></div>
         </div>
+        <div>
+          <div class="meta-label">Post type</div>
+          <div id="detail-type-wrap"></div>
+        </div>
+      </div>
+      <div class="is-hidden" id="detail-swap-wrap">
+        <div class="meta-label">Looking to swap for</div>
+        <p class="subtitle" id="detail-swap-desc">—</p>
       </div>
       <div>
         <div class="meta-label">Description</div>

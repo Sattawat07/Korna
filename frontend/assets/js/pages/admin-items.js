@@ -1,9 +1,11 @@
 import { request } from '../api.js';
 import {
   closeModalDialog,
+  enhanceSelect,
   escapeHtml,
   formatShortDate,
   getStatusDisplay,
+  getTypeDisplay,
   loadAdminProfile,
   openModalDialog,
   sanitizeImageUrl,
@@ -11,8 +13,10 @@ import {
 } from '../shared/admin-common.js';
 
 const searchInput = document.getElementById('items-search');
-const statusSelect = document.getElementById('status-select');
+const typeSelect = document.getElementById('type-select');
 const categorySelect = document.getElementById('category-select');
+const typeDropdown = enhanceSelect(typeSelect);
+const categoryDropdown = enhanceSelect(categorySelect);
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tbody = document.getElementById('items-tbody');
 const totalLabel = document.getElementById('items-total-label');
@@ -48,6 +52,7 @@ async function loadCategories() {
       opt.textContent = cat.name;
       categorySelect.appendChild(opt);
     }
+    categoryDropdown.sync();
   } catch {
     // Ignore category load failure
   }
@@ -62,6 +67,7 @@ async function loadItems() {
   const q = searchInput.value.trim();
   if (q) params.set('q', q);
   if (currentStatus) params.set('status', currentStatus);
+  if (typeSelect.value) params.set('type', typeSelect.value);
   if (categorySelect.value) params.set('category_id', categorySelect.value);
 
   try {
@@ -91,6 +97,7 @@ function renderItemsTable(items) {
   tbody.innerHTML = items
     .map((item) => {
       const st = getStatusDisplay(item.status);
+      const tp = getTypeDisplay(item.type);
       const safeImg = sanitizeImageUrl(item.image_url);
       const thumb = safeImg
         ? `<img class="item-thumb" src="${safeImg}" alt="">`
@@ -98,13 +105,13 @@ function renderItemsTable(items) {
       const isRemoved = item.status === 'removed';
 
       return `
-        <tr>
+        <tr class="item-row-clickable" data-id="${escapeHtml(item.id)}" tabindex="0">
           <td>
             <div class="item-cell">
               ${thumb}
               <div>
                 <div class="item-title">${escapeHtml(item.title)}</div>
-                <div class="item-cat">${escapeHtml(item.category?.name || 'Uncategorized')}</div>
+                <div class="item-cat"><span class="type-pill ${tp.cls}">${tp.label}</span>${escapeHtml(item.category?.name || 'Uncategorized')}</div>
               </div>
             </div>
           </td>
@@ -122,7 +129,6 @@ function renderItemsTable(items) {
           <td>${escapeHtml(formatShortDate(item.created_at))}</td>
           <td>
             <div class="action-group">
-              <button type="button" class="btn-outline" data-action="view" data-id="${escapeHtml(item.id)}">View details</button>
               <button type="button" class="btn-outline" data-action="delete" data-id="${escapeHtml(item.id)}" ${isRemoved ? 'disabled' : ''}>Delete</button>
             </div>
           </td>
@@ -135,12 +141,22 @@ function renderItemsTable(items) {
 function openDetailModal(item) {
   selectedItem = item;
   const st = getStatusDisplay(item.status);
+  const tp = getTypeDisplay(item.type);
   document.getElementById('detail-title').textContent = item.title;
   document.getElementById('detail-sub').textContent =
     `${item.category?.name || 'Uncategorized'} · Listed ${formatShortDate(item.created_at)}`;
   document.getElementById('detail-owner').textContent = item.owner?.name || 'Unknown';
   document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
+  document.getElementById('detail-type-wrap').innerHTML = `<span class="type-pill ${tp.cls}">${tp.label}</span>`;
   document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
+
+  const swapWrap = document.getElementById('detail-swap-wrap');
+  if (item.type === 'swap' && item.swap_details?.desired_description) {
+    document.getElementById('detail-swap-desc').textContent = item.swap_details.desired_description;
+    swapWrap.classList.remove('is-hidden');
+  } else {
+    swapWrap.classList.add('is-hidden');
+  }
 
   const imgEl = document.getElementById('detail-img');
   if (item.image_url) {
@@ -162,13 +178,26 @@ function openDeleteModal(item) {
 }
 
 tbody.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  const item = currentItems.find((i) => String(i.id) === btn.dataset.id);
-  if (!item) return;
+  const delBtn = e.target.closest('button[data-action="delete"]');
+  if (delBtn) {
+    const item = currentItems.find((i) => String(i.id) === delBtn.dataset.id);
+    if (item) openDeleteModal(item);
+    return;
+  }
+  const row = e.target.closest('tr[data-id]');
+  if (!row) return;
+  const item = currentItems.find((i) => String(i.id) === row.dataset.id);
+  if (item) openDetailModal(item);
+});
 
-  if (btn.dataset.action === 'view') openDetailModal(item);
-  if (btn.dataset.action === 'delete') openDeleteModal(item);
+tbody.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.closest('button')) return;
+  const row = e.target.closest('tr[data-id]');
+  if (!row) return;
+  e.preventDefault();
+  const item = currentItems.find((i) => String(i.id) === row.dataset.id);
+  if (item) openDetailModal(item);
 });
 
 detailCloseBtn.addEventListener('click', () => closeModalDialog(detailModal));
@@ -194,6 +223,9 @@ deleteConfirmBtn.addEventListener('click', async () => {
   try {
     await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
     closeModalDialog(deleteModal);
+    if (currentPage > 1 && currentItems.length <= 1) {
+      currentPage -= 1;
+    }
     await loadItems();
   } catch (error) {
     deleteError.textContent = error.message || 'Unable to delete item.';
@@ -205,7 +237,6 @@ deleteConfirmBtn.addEventListener('click', async () => {
 // Filters & Tabs
 function syncTabs(status) {
   currentStatus = status;
-  statusSelect.value = status;
   tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.status === status));
   currentPage = 1;
   loadItems();
@@ -214,7 +245,10 @@ function syncTabs(status) {
 tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => syncTabs(btn.dataset.status));
 });
-statusSelect.addEventListener('change', () => syncTabs(statusSelect.value));
+typeSelect.addEventListener('change', () => {
+  currentPage = 1;
+  loadItems();
+});
 categorySelect.addEventListener('change', () => {
   currentPage = 1;
   loadItems();
@@ -228,7 +262,10 @@ searchInput.addEventListener('input', () => {
 });
 resetBtn.addEventListener('click', () => {
   searchInput.value = '';
+  typeSelect.value = '';
   categorySelect.value = '';
+  typeDropdown.sync();
+  categoryDropdown.sync();
   syncTabs('');
 });
 prevBtn.addEventListener('click', () => {
