@@ -194,7 +194,7 @@
   font-size: 14px;
   font-weight: 600;
   color: #5E4636;
-  background-color: #F4C542;
+  background-color: var(--accent-yellow);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -203,7 +203,7 @@
 }
 
 .modal-btn-submit:hover {
-  background-color: #e6b83c;
+  background-color: var(--accent-yellow-strong);
 }
 
 .modal-btn-submit:focus-visible {
@@ -237,4 +237,8 @@
   color: #B5A090;
   cursor: not-allowed;
   text-decoration: none;
+}
+
+.is-hidden {
+  display: none;
 }

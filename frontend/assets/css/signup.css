@@ -21,17 +21,17 @@ body {
 }
 
 .logo {
-  width: 56px;
-  height: 56px;
-  background-color: #5E4636;
-  border-radius: 50%;
+  width: 88px;
+  height: 88px;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  font-weight: 700;
-  font-size: 14px;
+  border-radius: 50%;
+  box-shadow: 0 10px 24px rgba(94, 70, 54, 0.22);
+}
+
+.logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Signup card */
@@ -268,7 +268,7 @@ button[type="submit"] {
   font-size: 14px;
   font-weight: 600;
   color: #5E4636;
-  background-color: #F4C542;
+  background-color: var(--accent-yellow);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -277,7 +277,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background-color: #e6b83c;
+  background-color: var(--accent-yellow-strong);
 }
 
 button[type="submit"]:focus-visible {

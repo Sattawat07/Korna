@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feed · KORNA</title>
+    <script>
+      // ใส่ธีมก่อนหน้าแสดงผล กันหน้าขาวกะพริบในโหมดมืด
+      try {
+        if (localStorage.getItem('korna_theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch {}
+    </script>
+    <link rel="stylesheet" href="../assets/css/base.css" />
+    <link rel="stylesheet" href="../assets/css/feed.css" />
+    <link rel="stylesheet" href="../assets/css/theme.css" />
+    <script type="module" src="../assets/js/shared/theme.js"></script>
+  </head>
+  <body class="feed-page">
+    <div class="feed">
+      <header class="toolbar">
+        <button class="toolbar__create" type="button" data-open-modal="create-post-modal" data-member-only>
+          <i data-icon="send"></i>
+          Create post...
+        </button>
+
+        <label class="toolbar__search">
+          <i data-icon="search"></i>
+          <input type="search" id="search-input" placeholder="search" aria-label="ค้นหาโพสต์" />
+        </label>
+
+        <div class="filters">
+          <label class="pill">
+            <span class="sr-only">หมวดหมู่</span>
+            <select id="filter-category">
+              <option value="">Category</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <label class="pill">
+            <span class="sr-only">ประเภทโพสต์</span>
+            <select id="filter-type">
+              <option value="">Type</option>
+              <option value="free">Free</option>
+              <option value="swap">Swap</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <label class="pill">
+            <span class="sr-only">ช่วงเวลาที่โพสต์</span>
+            <select id="filter-range">
+              <option value="">Any time</option>
+              <option value="today">Today</option>
+              <option value="7d">Last 7 days</option>
+              <option value="month">This month</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <label class="pill">
+            <span class="sr-only">เรียงลำดับ</span>
+            <select id="filter-sort">
+              <option value="newest">sort: newest</option>
+              <option value="oldest">sort: oldest</option>
+            </select>
+            <i data-icon="chevronDown" class="pill__chevron"></i>
+          </label>
+          <div class="view-toggle" role="group" aria-label="รูปแบบการแสดงผล">
+            <button type="button" data-view="grid" aria-pressed="true" aria-label="แบบตาราง"><i data-icon="grid"></i></button>
+            <button type="button" data-view="list" aria-pressed="false" aria-label="แบบรายการ"><i data-icon="list"></i></button>
+          </div>
+        </div>
+
+        <nav class="toolbar__actions" aria-label="เมนูผู้ใช้">
+          <button class="icon-btn" type="button" aria-label="การแจ้งเตือน" data-notifications data-member-only><i data-icon="bell"></i></button>
+          <a class="icon-btn" href="./profile.html" aria-label="โปรไฟล์" id="profile-link" data-member-only><i data-icon="user"></i></a>
+          <a class="btn btn--primary toolbar__signin" href="./login.html" data-guest-only hidden>Sign in</a>
+        </nav>
+      </header>
+
+      <main>
+        <h1 class="feed__heading">Feed</h1>
+        <section class="cards cards--grid" id="cards" aria-live="polite" aria-busy="true"></section>
+        <p class="feed__status" id="feed-status" role="status">Loading...</p>
+        <div class="feed__more" id="feed-more" hidden>
+          <button class="btn btn--outline" type="button" id="load-more">Load more</button>
+        </div>
+      </main>
+
+      <footer></footer>
+    </div>
+
+    <!-- Modal: สร้างโพสต์ -->
+    <dialog class="modal" id="create-post-modal" aria-labelledby="create-post-title">
+      <form id="create-post-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="create-post-title">Create post</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <label class="soft-input">
+            <i data-icon="send"></i>
+            <input name="title" maxlength="200" placeholder="Create item’s name." aria-label="ชื่อสิ่งของ" required autofocus />
+          </label>
+          <p class="field-error" data-error-for="title"></p>
+          <div class="soft-input soft-input--area">
+            <i data-icon="pencil"></i>
+            <textarea name="description" rows="2" placeholder="Description about item." aria-label="รายละเอียด"></textarea>
+            <button class="addon" type="button" data-add-images="post-images" aria-label="เพิ่มรูป" title="Add photos"><i data-icon="imagePlus"></i></button>
+          </div>
+          <label class="soft-input">
+            <i data-icon="file"></i>
+            <input name="defects" placeholder="Defects or condition (optional)" aria-label="ตำหนิหรือสภาพของ (ไม่บังคับ)" />
+          </label>
+          <p class="field-error" data-error-for="defects"></p>
+          <div class="modal__row">
+            <div class="modal__col modal__row-grow">
+              <label class="soft-input select-wrap">
+                <select name="category_id" aria-label="หมวดหมู่" required>
+                  <option value="">Category</option>
+                </select>
+              </label>
+              <p class="field-error" data-error-for="category_id"></p>
+            </div>
+            <div class="modal__col">
+              <label class="soft-input select-wrap">
+                <select name="type" id="post-type" aria-label="ประเภท" required>
+                  <option value="">Type</option>
+                  <option value="free">Free</option>
+                  <option value="swap">Swap</option>
+                </select>
+              </label>
+              <p class="field-error" data-error-for="type"></p>
+            </div>
+          </div>
+          <div class="modal__col" id="desired-field" hidden>
+            <label class="soft-input select-wrap">
+              <span class="soft-input__prefix">Want</span>
+              <select name="desired_category_id" aria-label="หมวดของที่อยากได้ (ไม่บังคับ)">
+                <option value="">Wanted category (any)</option>
+              </select>
+            </label>
+            <p class="field-error" data-error-for="desired_category_id"></p>
+            <label class="soft-input">
+              <i data-icon="swap"></i>
+              <input name="desired_description" placeholder="What do you want in exchange?" aria-label="สิ่งที่อยากได้เพื่อแลก" />
+            </label>
+            <p class="field-error" data-error-for="desired_description"></p>
+          </div>
+          <input type="file" id="post-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <div class="uploader" data-input="post-images" data-hint="Optional · up to 5 images (JPG, PNG, WebP)"></div>
+        </div>
+        <div class="modal__footer">
+          <p class="modal__message" id="create-post-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Post</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Modal: รายละเอียดโพสต์ -->
+    <dialog class="modal modal--details" id="item-modal" autofocus aria-labelledby="item-modal-title">
+      <div class="modal__header">
+        <div>
+          <p class="details-modal__eyebrow" id="item-modal-owner"></p>
+          <h2 class="modal__title" id="item-modal-title"></h2>
+        </div>
+        <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+      </div>
+      <div class="details-modal__body" id="item-modal-body"></div>
+    </dialog>
+
+    <!-- Modal: ขอรับของฟรี -->
+    <dialog class="modal" id="request-give-modal" aria-labelledby="request-give-title">
+      <form id="request-give-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="request-give-title">Request</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <p class="modal__item" data-request-item></p>
+          <label class="soft-input soft-input--area">
+            <i data-icon="send"></i>
+            <textarea name="message" rows="3" placeholder="request something..." aria-label="ข้อความถึงเจ้าของ" autofocus></textarea>
+          </label>
+        </div>
+        <div class="modal__footer">
+          <p class="modal__message" id="request-give-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Send</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Modal: เสนอแลก -->
+    <dialog class="modal" id="request-swap-modal" aria-labelledby="request-swap-title">
+      <form id="request-swap-form" novalidate>
+        <div class="modal__header">
+          <h2 class="modal__title" id="request-swap-title">Request</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="ปิด"><i data-icon="close"></i></button>
+        </div>
+        <div class="modal__body">
+          <p class="modal__item" data-request-item></p>
+          <label class="soft-input">
+            <i data-icon="send"></i>
+            <input name="message" placeholder="Send message." aria-label="ข้อความถึงเจ้าของ" autofocus />
+          </label>
+          <div class="soft-input">
+            <i data-icon="file"></i>
+            <input name="offer_description" placeholder="Describe the item you offer" aria-label="รายละเอียดของที่เสนอแลก" required />
+            <button class="addon" type="button" data-add-images="offer-images" aria-label="เพิ่มรูป" title="Add photos"><i data-icon="imagePlus"></i></button>
+          </div>
+          <p class="field-error" data-error-for="offer_description"></p>
+          <input type="file" id="offer-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <div class="uploader" data-input="offer-images" data-hint="Optional · photos of your item, up to 5"></div>
+        </div>
+        <div class="modal__footer">
+          <p class="modal__message" id="request-swap-message" role="alert"></p>
+          <button class="btn btn--primary btn--block" type="submit">Send</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="../assets/js/pages/feed.js"></script>
+  </body>
+</html>

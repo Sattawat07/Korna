@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign up - KORNA</title>
+  <link rel="stylesheet" href="../assets/css/theme.css">
   <link rel="stylesheet" href="../assets/css/signup.css">
   <link rel="stylesheet" href="../assets/css/modal.css">
+  <script type="module" src="../assets/js/shared/theme.js"></script>
 </head>
 <body>
   <div class="logo-wrapper">
-    <div class="logo">Logo</div>
+    <div class="logo"><img src="../assets/images/logo-phoenix.svg" alt="KORNA" width="88" height="88"></div>
   </div>
 
   <main class="signup-card">
@@ -83,12 +85,12 @@
 
       <form class="modal-form" id="signup-otp-form">
         <div class="otp-inputs" id="signup-otp-inputs">
-          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
-          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
-          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
-          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
-          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
-          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" aria-label="OTP digit 1" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" aria-label="OTP digit 2" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" aria-label="OTP digit 3" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" aria-label="OTP digit 4" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" aria-label="OTP digit 5" required>
+          <input type="text" inputmode="numeric" class="otp-digit" maxlength="1" aria-label="OTP digit 6" required>
         </div>
         <div class="otp-timer">Expires in <span id="signup-timer">05:00</span></div>
         <div class="modal-error" id="signup-otp-error"></div>

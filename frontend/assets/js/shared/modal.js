@@ -78,3 +78,48 @@ export function startCountdown(timerElement, seconds, onExpire) {
 
   return () => clearInterval(timerElement._interval);
 }
+
+const modalReturnFocus = new WeakMap();
+const modalCloseCallbacks = new WeakMap();
+
+export function openAccessibleModal(modal, onClose) {
+  if (!modal) return;
+  modalReturnFocus.set(modal, document.activeElement);
+  if (typeof onClose === 'function') modalCloseCallbacks.set(modal, onClose);
+  modal.classList.add('active');
+  const firstFocusable = modal.querySelector('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  firstFocusable?.focus();
+}
+
+export function closeAccessibleModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('active');
+  const prev = modalReturnFocus.get(modal);
+  if (prev && typeof prev.focus === 'function') prev.focus();
+}
+
+document.addEventListener('keydown', (e) => {
+  const activeModal = document.querySelector('.modal-backdrop.active');
+  if (!activeModal) return;
+
+  if (e.key === 'Escape') {
+    const onClose = modalCloseCallbacks.get(activeModal);
+    if (onClose) onClose();
+    else closeAccessibleModal(activeModal);
+    return;
+  }
+
+  if (e.key === 'Tab') {
+    const focusables = [...activeModal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter((el) => el.offsetParent !== null);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+});

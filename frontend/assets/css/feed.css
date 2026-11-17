@@ -1,0 +1,410 @@
+.feed {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 40px 33px 88px;
+}
+
+/* ---------- Toolbar ---------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: 28px;
+}
+
+.toolbar__create {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 52px;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex: none;
+  transition: background-color var(--ease);
+}
+
+.toolbar__create:hover {
+  background: var(--color-primary-hover);
+}
+
+.toolbar__create .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 160px;
+  min-width: 160px;
+  max-width: 260px;
+  height: 52px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: text;
+  transition: border-color var(--ease);
+}
+
+.toolbar__search:hover {
+  border-color: var(--color-border-strong);
+}
+
+.toolbar__search:focus-within {
+  border-color: var(--color-text-muted);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.toolbar__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: var(--fs-md);
+  color: var(--color-text);
+}
+
+.toolbar__search input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* ตัวกรองแบบ .filter-select ของ Admin */
+.pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color var(--ease),
+    border-color var(--ease);
+}
+
+.pill:hover {
+  background: var(--color-hover);
+  border-color: var(--color-border-strong);
+}
+
+.pill:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.pill.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary-border);
+  color: var(--color-on-primary);
+}
+
+.pill select {
+  appearance: none;
+  field-sizing: content; /* กว้างตามชื่อที่เลือก ไม่ตัดท้ายข้อความ */
+  min-width: 0;
+  max-width: 260px;
+  height: 100%;
+  text-overflow: ellipsis;
+  padding: 0 34px 0 var(--space-3);
+  border: 0;
+  border-radius: inherit;
+  outline: 0;
+  background: transparent;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pill__chevron {
+  position: absolute;
+  right: 12px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.view-toggle button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--ease),
+    color var(--ease);
+}
+
+.view-toggle button:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.view-toggle button[aria-pressed='true'] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.view-toggle .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.toolbar__actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* ---------- หัวข้อ (ซ่อนจากสายตา แต่โปรแกรมอ่านหน้าจอยังอ่านได้) ---------- */
+.feed__heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.feed__status {
+  padding: var(--space-10);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.feed__status--error {
+  color: var(--color-danger);
+}
+
+.feed__more {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.feed__more .btn {
+  height: 40px;
+  min-width: 180px;
+  font-size: var(--fs-sm);
+}
+
+/* ---------- การ์ดโพสต์ ---------- */
+.cards {
+  display: grid;
+  gap: 22px;
+}
+
+.cards--grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cards--list {
+  grid-template-columns: 1fr;
+  gap: 18px;
+  max-width: 760px; /* แบบรายการ: คอลัมน์เดียวตรงกลาง */
+  margin: 0 auto;
+}
+
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  transition:
+    border-color var(--ease),
+    box-shadow var(--ease);
+}
+
+.card {
+  cursor: pointer;
+}
+
+.card:hover,
+.card:focus-within {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.card__name {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card:hover .card__caption {
+  color: var(--color-text);
+}
+
+.card__caption {
+  margin-top: 1px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__header .status {
+  flex: none;
+}
+
+/* รูปปก: แสดงทั้งรูป (contain) บนพื้นรูปเดียวกันแบบเบลอ ไม่ยืด ไม่โดนตัด */
+.card__media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-muted);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  font: inherit;
+  isolation: isolate;
+}
+
+.card__media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.card__media .card__media-bg {
+  z-index: -1;
+  object-fit: cover;
+  filter: blur(18px) saturate(1.1);
+  opacity: 0.45;
+  transform: scale(1.15);
+}
+
+.card__media:hover img:not(.card__media-bg) {
+  transform: scale(1.03);
+}
+
+.card__media:focus-visible {
+  outline-offset: 3px;
+}
+
+.card__media > .icon {
+  width: 64px;
+  height: 64px;
+  stroke-width: 1.6;
+}
+
+.card__type {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-scrim);
+  color: var(--color-on-scrim);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.card__type .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.cards--list .card__media {
+  aspect-ratio: 16 / 9;
+}
+
+.cards--list .card__media > .icon {
+  width: 96px;
+  height: 96px;
+}
+
+.cards--list .avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card__request {
+  min-width: 132px;
+}
+
+.card__state {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.card__footer {
+  cursor: default;
+}
+
+/* ผู้เยี่ยมชม (ยังไม่ล็อกอิน) */
+.toolbar__signin {
+  height: 52px;
+  padding: 0 28px;
+  border-radius: var(--radius-lg);
+}
