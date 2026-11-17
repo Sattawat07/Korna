@@ -11,7 +11,7 @@ test('GET /api/notifications paginates only the current user’s notifications',
 	let notificationRows = [{
 		notification_id: '41', notification_type: 'request_received',
 		notification_item_id: '12', notification_request_id: '31',
-		notification_decision: null, actor_id: '8', actor_name: 'Ton',
+		notification_decision: null, actor_id: '8', actor_name: 'Ton', actor_avatar_url: null,
 		read_at: null, created_at: '2026-10-18T11:00:00.000Z',
 	}];
 	const queries = [];
@@ -41,11 +41,13 @@ test('GET /api/notifications paginates only the current user’s notifications',
 	assert.equal(firstBody.unread_count, 2);
 	assert.deepEqual(firstBody.notifications[0], {
 		id: 41, type: 'request_received', item_id: 12, request_id: 31,
-		actor: { id: 8, name: 'Ton' }, read_at: null,
+		actor: { id: 8, name: 'Ton', avatar_url: null }, read_at: null,
 		created_at: '2026-10-18T11:00:00.000Z',
 	});
 	assert.deepEqual(queries[0].values, [7]);
 	assert.deepEqual(queries[1].values, [7, 20, 0]);
+	assert.match(queries[0].sql, /recipient_user_id = \$1 AND cleared_at IS NULL/);
+	assert.match(queries[1].sql, /n\.recipient_user_id = \$1 AND n\.cleared_at IS NULL/);
 	assert.match(queries[1].sql, /ORDER BY n\.created_at DESC, n\.notification_id DESC/);
 	assert.equal(queries.every(query => /^\s*SELECT/.test(query.sql)), true);
 

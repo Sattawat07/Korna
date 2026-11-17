@@ -80,6 +80,8 @@
 | GET | `/api/requests?role=sent` | โปรไฟล์: Activity หรือโพสต์ที่ฉันส่งคำขอ | ผู้ใช้ |
 | GET | `/api/requests?role=received&item_id=:id` | โพสต์ของฉัน: คนที่ส่งคำขอมา | เจ้าของโพสต์ |
 | GET | `/api/notifications` | รายการแจ้งเตือน | ผู้ใช้ |
+| DELETE | `/api/notifications/read` | ซ่อนเฉพาะการแจ้งเตือนที่อ่านแล้ว | ผู้ใช้ |
+| DELETE | `/api/notifications` | ซ่อนการแจ้งเตือนทั้งหมดของฉัน | ผู้ใช้ |
 | PATCH | `/api/notifications/:id/read` | อ่านแจ้งเตือนแล้ว | เจ้าของการแจ้งเตือน |
 
 ### ฟีด โพสต์ และคำขอ
@@ -439,9 +441,21 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 สำหรับ `request_decided` เพิ่ม `decision: "accepted"|"rejected"` ในรายการ การเรียกดูไม่เปลี่ยนสถานะอ่าน
 
+รายการและ `pagination.total` รวมเฉพาะการแจ้งเตือนที่ยังไม่ Clear ส่วน `unread_count` นับจากรายการชุดเดียวกันที่ยังไม่อ่าน
+
+### DELETE /api/notifications/read
+
+ซ่อนเฉพาะการแจ้งเตือนที่อ่านแล้ว (`read_at IS NOT NULL`) ของผู้ใช้ที่ล็อกอิน โดยตั้ง `cleared_at` เป็นเวลาปัจจุบัน รายการที่ยังไม่อ่านยังแสดงอยู่และยังนับใน `unread_count` ตอบ `204` โดยไม่มี body แม้ไม่มีรายการที่อ่านแล้ว หากไม่มี session ตอบ `401 UNAUTHENTICATED`
+
+### DELETE /api/notifications
+
+ซ่อนการแจ้งเตือนทั้งหมดที่ยังแสดงอยู่ของผู้ใช้ที่ล็อกอิน ทั้งที่อ่านแล้วและยังไม่อ่าน โดยตั้ง `cleared_at` เป็นเวลาปัจจุบัน ข้อมูลยังอยู่ในฐานข้อมูลและการแจ้งเตือนใหม่หลังจากนี้ยังแสดงตามปกติ ตอบ `204` โดยไม่มี body; เรียกซ้ำเมื่อไม่มีรายการก็ยังตอบ `204` หากไม่มี session ตอบ `401 UNAUTHENTICATED`
+
+ฐานข้อมูลใหม่ใช้ `db/schema.sql` ส่วนฐานข้อมูลที่มีอยู่ให้รัน `db/add_notifications_cleared_at.sql` ก่อนใช้ API นี้
+
 ### PATCH /api/notifications/:id/read
 
-ทำเครื่องหมายว่าอ่านแล้ว ตอบ `200 {"notification":{"id":41,"type":"request_received","item_id":12,"request_id":31,"read_at":"2026-10-18T12:00:00.000Z","created_at":"2026-10-18T11:00:00.000Z"}}` ถ้าเป็น `request_decided` จะมี `decision` เพิ่ม ไม่ส่ง `actor` ใน response นี้ หากอ่านแล้วให้คง `read_at` เดิม การแจ้งเตือนของผู้อื่นหรือ ID ที่ไม่มีตอบ `404 NOT_FOUND`
+ทำเครื่องหมายว่าอ่านแล้ว ตอบ `200 {"notification":{"id":41,"type":"request_received","item_id":12,"request_id":31,"read_at":"2026-10-18T12:00:00.000Z","created_at":"2026-10-18T11:00:00.000Z"}}` ถ้าเป็น `request_decided` จะมี `decision` เพิ่ม ไม่ส่ง `actor` ใน response นี้ หากอ่านแล้วให้คง `read_at` เดิม การแจ้งเตือนของผู้อื่น, รายการที่ Clear แล้ว หรือ ID ที่ไม่มีตอบ `404 NOT_FOUND`
 
 ## ผู้ดูแลระบบ
 
