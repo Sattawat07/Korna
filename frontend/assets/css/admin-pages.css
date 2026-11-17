@@ -493,3 +493,18 @@
   align-items: center;
   gap: 8px;
 }
+
+/* แบ่งหน้าโพสต์ของสมาชิก (หน้า Users) */
+.user-items-pager {
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.user-items-pager .panel-sub {
+  margin: 0 auto 0 0;
+}
+
+.user-items-pager[hidden] {
+  display: none;
+}

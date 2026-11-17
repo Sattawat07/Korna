@@ -17,6 +17,11 @@ const usersPrevBtn = document.getElementById('users-prev-btn');
 const usersNextBtn = document.getElementById('users-next-btn');
 const assignAdminBtn = document.getElementById('assign-admin-btn');
 const userItemsListEl = document.getElementById('user-items-list');
+const userItemsPager = document.getElementById('user-items-pager');
+const userItemsPageInfo = document.getElementById('user-items-page-info');
+const userItemsPrevBtn = document.getElementById('user-items-prev-btn');
+const userItemsNextBtn = document.getElementById('user-items-next-btn');
+const USER_ITEMS_LIMIT = 20;
 
 // Modals
 const assignModal = document.getElementById('assign-modal');
@@ -43,6 +48,8 @@ let selectedItem = null;
 let searchTimer = null;
 let loadUsersSeq = 0;
 let loadUserItemsSeq = 0;
+let userItemsPage = 1;
+let userItemsTotalPages = 1;
 
 async function loadUsers() {
   const seq = ++loadUsersSeq;
@@ -57,19 +64,57 @@ async function loadUsers() {
     if (seq !== loadUsersSeq) return;
     users = data.users || [];
     const pag = data.pagination || { page: 1, total_pages: 1, total: users.length };
-    usersTotalSub.textContent = `${pag.total} registered users`;
+    usersTotalSub.textContent = q ? `${pag.total} matching users` : `${pag.total} registered users`;
     usersPrevBtn.disabled = pag.page <= 1;
     usersNextBtn.disabled = pag.page >= pag.total_pages;
-    renderUsersList();
 
-    if (users.length > 0 && (!selectedUser || !users.some((u) => u.id === selectedUser.id))) {
+    if (users.length === 0) {
+      // ค้นหาไม่เจอใคร → ล้างคนที่เลือกไว้ก่อนหน้า ไม่ให้รายละเอียดและปุ่ม Assign Admin ค้าง
+      clearSelectedUser();
+      renderUsersList();
+      return;
+    }
+
+    const stillListed = selectedUser && users.find((u) => u.id === selectedUser.id);
+    if (stillListed) {
+      selectedUser = stillListed;
+      renderUsersList();
+    } else {
       selectUser(users[0]);
     }
   } catch (error) {
     if (seq !== loadUsersSeq) return;
+    clearSelectedUser();
+    usersPrevBtn.disabled = true;
+    usersNextBtn.disabled = true;
     usersListEl.innerHTML = '<p class="panel-sub"></p>';
     usersListEl.firstElementChild.textContent = error.message || 'Unable to load users.';
   }
+}
+
+/** กลับไปเป็นสถานะ "ยังไม่ได้เลือกสมาชิก" แบบตอนเปิดหน้า */
+function clearSelectedUser() {
+  selectedUser = null;
+  selectedUserItems = [];
+  selectedItem = null;
+  loadUserItemsSeq += 1; // ยกเลิกการโหลดโพสต์ของคนเดิมที่อาจค้างอยู่
+
+  document.getElementById('selected-user-name').textContent = 'Select a member';
+  document.getElementById('selected-user-email').textContent = '—';
+  const roleBadge = document.getElementById('selected-user-role');
+  roleBadge.textContent = 'Member';
+  roleBadge.className = 'status-pill status-available';
+  document.getElementById('selected-user-joined').textContent = '';
+  document.getElementById('selected-user-room').textContent = '—';
+  document.getElementById('selected-user-phone').textContent = '—';
+  document.getElementById('selected-user-items-count').textContent = '0';
+
+  assignAdminBtn.disabled = true;
+  assignAdminBtn.textContent = 'Assign Admin';
+
+  document.getElementById('user-items-sub').textContent = 'Select a member to view their listings.';
+  userItemsListEl.innerHTML = '';
+  userItemsPager.hidden = true;
 }
 
 function renderUsersList() {
@@ -120,16 +165,34 @@ async function selectUser(user) {
   assignAdminBtn.textContent = user.role === 'admin' ? 'Already Admin' : 'Assign Admin';
 
   document.getElementById('user-items-sub').textContent = `Manage ${user.name}'s listings without leaving this profile.`;
-  await loadUserItems(user.id);
+  await loadUserItems(user.id, 1);
 }
 
-async function loadUserItems(ownerId) {
+async function loadUserItems(ownerId, page = userItemsPage) {
   const seq = ++loadUserItemsSeq;
   userItemsListEl.innerHTML = '<p class="panel-sub">Loading items...</p>';
+  userItemsPrevBtn.disabled = true;
+  userItemsNextBtn.disabled = true;
   try {
-    const data = await request(`/admin/items?owner_id=${ownerId}&limit=50`);
+    const params = new URLSearchParams({ owner_id: String(ownerId), page: String(page), limit: String(USER_ITEMS_LIMIT) });
+    const data = await request(`/admin/items?${params.toString()}`);
     if (seq !== loadUserItemsSeq) return;
     selectedUserItems = data.items || [];
+    const pag = data.pagination || { page, total_pages: 1, total: selectedUserItems.length };
+
+    // หน้านี้ว่าง (เช่นลบโพสต์สุดท้ายของหน้า) → ถอยกลับไปหน้าก่อน
+    if (selectedUserItems.length === 0 && page > 1) {
+      await loadUserItems(ownerId, page - 1);
+      return;
+    }
+
+    userItemsPage = pag.page;
+    userItemsTotalPages = Math.max(1, pag.total_pages);
+    userItemsPager.hidden = userItemsTotalPages <= 1;
+    userItemsPageInfo.textContent = `Page ${userItemsPage} of ${userItemsTotalPages} · ${pag.total} items`;
+    userItemsPrevBtn.disabled = userItemsPage <= 1;
+    userItemsNextBtn.disabled = userItemsPage >= userItemsTotalPages;
+
     if (selectedUserItems.length === 0) {
       userItemsListEl.innerHTML = '<p class="panel-sub">No listed items.</p>';
       return;
@@ -161,10 +224,19 @@ async function loadUserItems(ownerId) {
       .join('');
   } catch (error) {
     if (seq !== loadUserItemsSeq) return;
+    userItemsPager.hidden = true;
     userItemsListEl.innerHTML = '<p class="panel-sub"></p>';
     userItemsListEl.firstElementChild.textContent = error.message || 'Unable to load items.';
   }
 }
+
+userItemsPrevBtn.addEventListener('click', () => {
+  if (selectedUser && userItemsPage > 1) loadUserItems(selectedUser.id, userItemsPage - 1);
+});
+
+userItemsNextBtn.addEventListener('click', () => {
+  if (selectedUser && userItemsPage < userItemsTotalPages) loadUserItems(selectedUser.id, userItemsPage + 1);
+});
 
 usersListEl.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-user-id]');
@@ -287,7 +359,7 @@ deleteConfirmBtn.addEventListener('click', async () => {
   try {
     await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
     closeModalDialog(deleteModal);
-    await loadUserItems(selectedUser.id);
+    await loadUserItems(selectedUser.id, userItemsPage);
   } catch (error) {
     deleteError.textContent = error.message || 'Unable to delete item.';
   } finally {
