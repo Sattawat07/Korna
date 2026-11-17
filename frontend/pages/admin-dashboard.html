@@ -170,17 +170,17 @@
           </div>
 
           <ul class="breakdown-list">
-            <li data-seg="seg-completed">
+            <li>
               <span class="breakdown-label"><span class="legend-dot dot-brown"></span>Completed</span>
               <strong id="req-completed-count">0</strong>
               <span class="breakdown-pct" id="req-completed-pct">0%</span>
             </li>
-            <li data-seg="seg-pending">
+            <li>
               <span class="breakdown-label"><span class="legend-dot dot-yellow"></span>Pending</span>
               <strong id="req-pending-count">0</strong>
               <span class="breakdown-pct" id="req-pending-pct">0%</span>
             </li>
-            <li data-seg="seg-cancelled">
+            <li>
               <span class="breakdown-label"><span class="legend-dot dot-taupe"></span>Cancelled</span>
               <strong id="req-cancelled-count">0</strong>
               <span class="breakdown-pct" id="req-cancelled-pct">0%</span>
@@ -205,12 +205,12 @@
           </div>
 
           <ul class="breakdown-list">
-            <li data-seg="seg-type-free">
+            <li>
               <span class="breakdown-label"><span class="legend-dot dot-yellow"></span>Free</span>
               <strong id="type-free-count">0</strong>
               <span class="breakdown-pct" id="type-free-pct">0%</span>
             </li>
-            <li data-seg="seg-type-swap">
+            <li>
               <span class="breakdown-label"><span class="legend-dot dot-brown"></span>Swap</span>
               <strong id="type-swap-count">0</strong>
               <span class="breakdown-pct" id="type-swap-pct">0%</span>
@@ -260,6 +260,42 @@
     </main>
   </div>
 
+  <!-- Modal: Item Details -->
+  <div class="admin-modal-backdrop" id="item-detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div class="admin-modal-card">
+      <button type="button" class="admin-modal-close" id="detail-close-btn" aria-label="Close">✕</button>
+      <span class="eyebrow">ITEM MODERATION</span>
+      <h3 id="detail-title">Item title</h3>
+      <p class="subtitle" id="detail-sub">Category · Listed date</p>
+      <img id="detail-img" class="modal-detail-img is-hidden" alt="Item preview">
+      <div class="modal-detail-meta">
+        <div>
+          <div class="meta-label">Owner</div>
+          <div class="meta-value" id="detail-owner">—</div>
+        </div>
+        <div>
+          <div class="meta-label">Exchange status</div>
+          <div id="detail-status-wrap"></div>
+        </div>
+        <div>
+          <div class="meta-label">Post type</div>
+          <div id="detail-type-wrap"></div>
+        </div>
+      </div>
+      <div class="is-hidden" id="detail-swap-wrap">
+        <div class="meta-label">Looking to swap for</div>
+        <p class="subtitle" id="detail-swap-desc">—</p>
+      </div>
+      <div>
+        <div class="meta-label">Description</div>
+        <p class="subtitle" id="detail-desc">—</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-yellow" id="detail-delete-btn">Delete item</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Delete Item Confirmation -->
   <div class="admin-modal-backdrop" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
     <div class="admin-modal-card">
@@ -284,24 +320,6 @@
       <div class="modal-actions">
         <button type="button" class="btn-outline" id="logout-stay-btn">Stay here</button>
         <button type="button" class="btn-yellow" id="logout-confirm-btn">Log out</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recent activity detail -->
-  <div class="admin-modal-backdrop" id="recent-modal" role="dialog" aria-modal="true" aria-labelledby="recent-modal-title">
-    <div class="admin-modal-card recent-modal-card">
-      <button type="button" class="admin-modal-close" data-close-recent aria-label="Close">✕</button>
-      <div class="recent-modal-head">
-        <h3 id="recent-modal-title">Request</h3>
-        <span id="recent-modal-status"></span>
-      </div>
-      <p class="subtitle" id="recent-modal-time"></p>
-      <div id="recent-modal-item"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn-outline recent-delete" id="recent-delete-btn" hidden>Delete item</button>
-        <button type="button" class="btn-outline" data-close-recent>Close</button>
-        <a class="btn-yellow" id="recent-modal-link" href="admin-items.html" hidden>Open in Items &amp; Posts</a>
       </div>
     </div>
   </div>
