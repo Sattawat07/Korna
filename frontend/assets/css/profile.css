@@ -338,6 +338,14 @@
 }
 
 .row__title {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   font-weight: 600;
   color: var(--color-text);
   overflow: hidden;

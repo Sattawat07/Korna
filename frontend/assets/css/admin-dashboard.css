@@ -653,3 +653,355 @@ body {
 [data-theme="dark"] .bar-fill.completed {
   background-color: #c9a98a;
 }
+
+/* รูปโปรไฟล์ในวงกลม (ชิปชื่อมุมขวาบน, เจ้าของโพสต์, รายชื่อสมาชิก) */
+.avatar-circle,
+.avatar-lg {
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-circle .avatar-img,
+.avatar-lg .avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.has-img > svg {
+  visibility: hidden;
+}
+
+/* ---------- Dashboard: มิติ + hover ---------- */
+.kpi-card,
+.panel-card {
+  box-shadow: 0 1px 2px rgba(45, 34, 27, 0.04), 0 6px 18px -12px rgba(45, 34, 27, 0.25);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.kpi-card:hover,
+.panel-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent-yellow-strong) 45%, var(--border-soft));
+  box-shadow: 0 2px 4px rgba(45, 34, 27, 0.05), 0 14px 28px -14px rgba(45, 34, 27, 0.35);
+}
+
+.kpi-card-dark:hover {
+  border-color: var(--bg-dark);
+}
+
+[data-theme="dark"] .kpi-card,
+[data-theme="dark"] .panel-card {
+  box-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.7);
+}
+
+/* แท่งกราฟรายวัน */
+.bar-day {
+  border-radius: 10px;
+  cursor: default;
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.bar-day:hover,
+.bar-day:focus-visible {
+  background-color: color-mix(in srgb, var(--accent-yellow) 28%, transparent);
+}
+
+.bar-day:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-yellow-strong);
+}
+
+.bar-fill {
+  transform-origin: bottom;
+  animation: bar-grow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.bar-fill.completed {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0));
+}
+
+.bar-fill.pending {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0));
+}
+
+.bar-day:hover .bar-fill,
+.bar-day:focus-visible .bar-fill {
+  filter: brightness(1.08) saturate(1.1);
+}
+
+.bar-day:hover .bar-date,
+.bar-day:focus-visible .bar-date {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+@keyframes bar-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* แถบสัดส่วน */
+.stacked-bar {
+  height: 16px;
+  border-radius: 8px;
+  gap: 2px;
+  background-color: transparent;
+}
+
+.stacked-seg {
+  border-radius: 4px;
+  cursor: default;
+  transition: width 0.4s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.stacked-bar.is-focused .stacked-seg {
+  opacity: 0.35;
+}
+
+.stacked-bar.is-focused .stacked-seg.is-active {
+  opacity: 1;
+  transform: scaleY(1.25);
+}
+
+.breakdown-list li,
+.category-bars li {
+  margin: 0 -10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.breakdown-list {
+  gap: 4px;
+}
+
+.category-bars {
+  gap: 2px;
+}
+
+.breakdown-list li:hover,
+.breakdown-list li:focus-visible,
+.category-bars li:hover,
+.category-bars li:focus-visible {
+  background-color: color-mix(in srgb, var(--accent-yellow) 26%, transparent);
+}
+
+.breakdown-list li:focus-visible,
+.category-bars li:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-yellow-strong);
+}
+
+.category-fill {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.35));
+  transform-origin: left;
+  animation: bar-grow-x 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes bar-grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* กล่อง tooltip ลอยตามเมาส์ */
+.chart-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1100;
+  min-width: 150px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background-color: #2d221b;
+  color: #fbf6ec;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.chart-tip.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chart-tip strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.chart-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  color: rgba(251, 246, 236, 0.8);
+}
+
+.chart-tip-row b {
+  margin-left: auto;
+  padding-left: 14px;
+  color: #fbf6ec;
+  font-weight: 600;
+}
+
+.chart-tip .dot-brown {
+  background-color: #c9a98a;
+}
+
+[data-theme="dark"] .chart-tip {
+  background-color: #f4ead8;
+  color: #2d221b;
+}
+
+[data-theme="dark"] .chart-tip-row {
+  color: rgba(45, 34, 27, 0.75);
+}
+
+[data-theme="dark"] .chart-tip-row b {
+  color: #2d221b;
+}
+
+[data-theme="dark"] .chart-tip .dot-brown {
+  background-color: #6b4f3a;
+}
+
+/* Recent activity: ทั้งแถวกดได้ */
+.recent-item {
+  padding: 0;
+}
+
+.recent-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  width: calc(100% + 20px);
+  margin: 0 -10px;
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.recent-btn:hover,
+.recent-btn:focus-visible {
+  background-color: color-mix(in srgb, var(--accent-yellow) 26%, transparent);
+  outline: none;
+}
+
+.recent-btn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-yellow-strong);
+}
+
+.recent-btn .recent-desc {
+  display: block;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recent-chevron {
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.recent-btn:hover .recent-chevron,
+.recent-btn:focus-visible .recent-chevron {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ป๊อปอัปรายละเอียดคำขอ */
+.recent-modal-card {
+  max-width: 520px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.recent-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 40px;
+}
+
+.recent-modal-head + .subtitle {
+  margin-top: -10px;
+}
+
+.recent-modal-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.8fr;
+  gap: 14px;
+  margin: 14px 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.recent-modal-grid .meta-label {
+  margin-bottom: 4px;
+}
+
+.recent-modal-grid .meta-value {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+
+.recent-modal-grid .owner-cell .avatar-circle {
+  flex-shrink: 0;
+}
+
+.recent-modal-text {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+a.btn-yellow {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+a.btn-yellow[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill,
+  .category-fill {
+    animation: none;
+  }
+
+  .kpi-card:hover,
+  .panel-card:hover {
+    transform: none;
+  }
+}

@@ -102,14 +102,6 @@
           <input type="search" class="search-input" id="items-search" placeholder="Search item name or owner">
         </div>
 
-        <select class="filter-select" id="status-select" aria-label="Filter by status">
-          <option value="">Exchange status</option>
-          <option value="available">Available</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Exchanged</option>
-          <option value="removed">Removed</option>
-        </select>
-
         <select class="filter-select" id="category-select" aria-label="Filter by category">
           <option value="">All categories</option>
         </select>
@@ -122,6 +114,7 @@
           <button type="button" class="tab-btn" data-status="available">Available</button>
           <button type="button" class="tab-btn" data-status="pending">Pending</button>
           <button type="button" class="tab-btn" data-status="completed">Exchanged</button>
+          <button type="button" class="tab-btn" data-status="removed">Removed</button>
         </div>
         <span class="items-count-label" id="items-total-label">All items</span>
       </section>

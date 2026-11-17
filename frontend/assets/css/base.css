@@ -1449,3 +1449,51 @@ html[data-theme='dark'] .toast {
   font-size: var(--fs-sm);
   color: rgba(255, 248, 232, 0.8);
 }
+
+/* ปุ่มล้างการแจ้งเตือนท้าย popup */
+.notif__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.notif__action {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--ease), border-color var(--ease), color var(--ease);
+}
+
+.notif__action:hover:not(:disabled),
+.notif__action:focus-visible {
+  background: var(--color-hover);
+}
+
+.notif__action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notif__action--danger:hover:not(:disabled),
+.notif__action--danger.is-confirming {
+  border-color: #c2533f;
+  background: #c2533f;
+  color: #fff;
+}
+
+.notif__error {
+  margin-right: auto;
+  font-size: var(--fs-xs);
+  color: #c2533f;
+}

@@ -1,5 +1,6 @@
 import { request } from '../api.js';
 import {
+  avatarHtml,
   closeModalDialog,
   escapeHtml,
   formatShortDate,
@@ -11,7 +12,6 @@ import {
 } from '../shared/admin-common.js';
 
 const searchInput = document.getElementById('items-search');
-const statusSelect = document.getElementById('status-select');
 const categorySelect = document.getElementById('category-select');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tbody = document.getElementById('items-tbody');
@@ -110,11 +110,7 @@ function renderItemsTable(items) {
           </td>
           <td>
             <div class="owner-cell">
-              <span class="avatar-circle" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-                </svg>
-              </span>
+              ${avatarHtml(item.owner?.avatar_url)}
               <span>${escapeHtml(item.owner?.name || 'Unknown')}</span>
             </div>
           </td>
@@ -205,7 +201,6 @@ deleteConfirmBtn.addEventListener('click', async () => {
 // Filters & Tabs
 function syncTabs(status) {
   currentStatus = status;
-  statusSelect.value = status;
   tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.status === status));
   currentPage = 1;
   loadItems();
@@ -214,7 +209,6 @@ function syncTabs(status) {
 tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => syncTabs(btn.dataset.status));
 });
-statusSelect.addEventListener('change', () => syncTabs(statusSelect.value));
 categorySelect.addEventListener('change', () => {
   currentPage = 1;
   loadItems();
@@ -251,4 +245,7 @@ setupLogoutModal({
   closeBtn: document.getElementById('logout-close-btn'),
 });
 loadCategories();
+// เปิดจากหน้า Dashboard พร้อมคำค้น เช่น admin-items.html?q=Desk%20lamp
+const initialQuery = new URLSearchParams(window.location.search).get('q');
+if (initialQuery) searchInput.value = initialQuery;
 loadItems();
