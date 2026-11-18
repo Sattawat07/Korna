@@ -30,6 +30,32 @@ function mapItem(row) {
 	};
 }
 
+const adminItemSelect = `
+	SELECT
+		i.item_id, i.item_owner_id, i.item_title, i.item_description,
+		i.item_defects, i.item_type, i.item_status, i.item_created_at,
+		c.category_id, c.category_name, u.user_name AS owner_name,
+		u.user_avatar_url AS owner_avatar_url,
+		sd.desired_description,
+		dc.category_id AS desired_category_id,
+		dc.category_name AS desired_category_name,
+		COALESCE((
+			SELECT json_agg(json_build_object(
+				'id', im.image_id, 'url', im.image_url, 'position', im.position
+			) ORDER BY im.position, im.image_id)
+			FROM item_images im WHERE im.image_item_id = i.item_id
+		), '[]'::json) AS images,
+		(
+			SELECT im.image_url FROM item_images im
+			WHERE im.image_item_id = i.item_id
+			ORDER BY im.position, im.image_id LIMIT 1
+		) AS image_url
+	FROM items i
+	JOIN users u ON u.user_id = i.item_owner_id
+	JOIN categories c ON c.category_id = i.item_category_id
+	LEFT JOIN item_swap_details sd ON sd.swap_item_id = i.item_id
+	LEFT JOIN categories dc ON dc.category_id = sd.desired_category_id`;
+
 adminRouter.get('/stats', async (req, res) => {
 	const rawLimit = req.query.recent_requests_limit;
 	if (rawLimit !== undefined &&
@@ -191,29 +217,7 @@ adminRouter.get('/items', async (req, res) => {
 			${filters}`, values);
 		const total = Number(countRows[0].total);
 		const { rows } = await pool.query(`
-			SELECT
-				i.item_id, i.item_owner_id, i.item_title, i.item_description,
-				i.item_defects, i.item_type, i.item_status, i.item_created_at,
-				c.category_id, c.category_name, u.user_name AS owner_name,
-				u.user_avatar_url AS owner_avatar_url,
-				sd.desired_description,
-				dc.category_id AS desired_category_id,
-				dc.category_name AS desired_category_name,
-				COALESCE((
-					SELECT json_agg(json_build_object(
-						'id', im.image_id, 'url', im.image_url, 'position', im.position
-					) ORDER BY im.position, im.image_id)
-					FROM item_images im WHERE im.image_item_id = i.item_id
-				), '[]'::json) AS images,
-				(
-					SELECT im.image_url FROM item_images im
-					WHERE im.image_item_id = i.item_id
-					ORDER BY im.position, im.image_id LIMIT 1
-				) AS image_url
-			${from}
-			JOIN categories c ON c.category_id = i.item_category_id
-			LEFT JOIN item_swap_details sd ON sd.swap_item_id = i.item_id
-			LEFT JOIN categories dc ON dc.category_id = sd.desired_category_id
+			${adminItemSelect}
 			${filters}
 			ORDER BY i.item_created_at DESC, i.item_id DESC
 			LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
@@ -224,6 +228,33 @@ adminRouter.get('/items', async (req, res) => {
 		});
 	} catch (error) {
 		console.error('Failed to load admin items:', error);
+		return res.status(503).json({
+			error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' },
+		});
+	}
+});
+
+adminRouter.get('/items/:id', async (req, res) => {
+	const itemId = Number(req.params.id);
+	if (!/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(itemId)) {
+		return res.status(400).json({
+			error: { code: 'VALIDATION_ERROR', message: 'Please check the submitted fields.',
+				details: { id: 'Enter a valid item ID' } },
+		});
+	}
+
+	try {
+		const { rows } = await pool.query(`
+			${adminItemSelect}
+			WHERE i.item_id = $1`, [itemId]);
+		if (rows.length === 0) {
+			return res.status(404).json({
+				error: { code: 'NOT_FOUND', message: 'Item not found.' },
+			});
+		}
+		return res.status(200).json({ item: mapItem(rows[0]) });
+	} catch (error) {
+		console.error('Failed to load admin item:', error);
 		return res.status(503).json({
 			error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' },
 		});

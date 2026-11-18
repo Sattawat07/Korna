@@ -106,6 +106,7 @@
 | --- | --- | --- | --- |
 | GET | `/api/admin/stats` | Dashboard และกราฟ | admin, super_admin |
 | GET | `/api/admin/items` | รายการโพสต์และค้นหา | admin, super_admin |
+| GET | `/api/admin/items/:id` | รายละเอียดโพสต์ | admin, super_admin |
 | GET | `/api/admin/users` | รายชื่อสมาชิกและค้นหา | admin, super_admin |
 | DELETE | `/api/admin/items/:id` | ซ่อนโพสต์ | admin, super_admin |
 | PATCH | `/api/admin/users/:id/role` | มอบหรือถอดสิทธิ์ admin | super_admin |
@@ -495,6 +496,10 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 ### GET /api/admin/items
 
 ดูโพสต์ทุกสถานะ เรียงใหม่ไปเก่า รองรับ `q` ค้นในชื่อโพสต์หรือชื่อเจ้าของ, `owner_id`, `status=available|pending|completed|removed`, `type=free|swap`, `category_id`, `page` และ `limit` แบบเดียวกับ `/api/items`; ตอบ `200 {"items":[ ... ],"pagination":{ ... }}` โดยใช้รูปแบบ `item` เดิม คำบน UI `Exchanged` ใช้ `status=completed`
+
+### GET /api/admin/items/:id
+
+ดูรายละเอียดโพสต์ตาม ID รวมโพสต์สถานะ `removed` ตอบ `200 {"item":{ ... }}` โดยใช้รูปแบบเดียวกับรายการใน `GET /api/admin/items` รวมชื่อและรูปเจ้าของ หมวดหมู่ รูปโพสต์ และรายละเอียด swap หาก ID ไม่ใช่จำนวนเต็มบวกตอบ `400 VALIDATION_ERROR`; ไม่พบโพสต์ตอบ `404 NOT_FOUND`
 
 ### GET /api/admin/users
 
