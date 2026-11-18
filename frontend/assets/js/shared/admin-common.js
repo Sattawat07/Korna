@@ -77,8 +77,10 @@ export function getTypeDisplay(type) {
   return { label: 'Free', cls: 'type-free' };
 }
 
+let verifyAdminFn = null;
+
 export async function loadAdminProfile(nameEl, onLoaded) {
-  const verifyAdmin = async () => {
+  verifyAdminFn = async () => {
     try {
       const me = await request('/me');
       if (!['admin', 'super_admin'].includes(me?.user?.role)) {
@@ -95,11 +97,14 @@ export async function loadAdminProfile(nameEl, onLoaded) {
     }
   };
 
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) verifyAdmin();
-  });
+  if (!loadAdminProfile._bound) {
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) verifyAdminFn?.();
+    });
+    loadAdminProfile._bound = true;
+  }
 
-  await verifyAdmin();
+  await verifyAdminFn();
 }
 
 export function setupLogoutModal({ triggerBtn, modal, stayBtn, confirmBtn, closeBtn }) {
@@ -226,6 +231,7 @@ export function enhanceSelect(selectEl) {
 
     Array.from(selectEl.options).forEach((opt) => {
       const li = document.createElement('li');
+      li.setAttribute('role', 'presentation');
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'custom-select-option';
