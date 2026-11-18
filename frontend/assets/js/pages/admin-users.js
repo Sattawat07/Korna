@@ -364,11 +364,5 @@ loadAdminProfile(document.getElementById('admin-name'), (user) => {
   currentAdmin = user;
   refreshRoleAction();
 });
-setupLogoutModal({
-  triggerBtn: document.getElementById('logout-btn'),
-  modal: document.getElementById('logout-modal'),
-  stayBtn: document.getElementById('logout-stay-btn'),
-  confirmBtn: document.getElementById('logout-confirm-btn'),
-  closeBtn: document.getElementById('logout-close-btn'),
-});
+setupLogoutModal({ triggerBtn: document.getElementById('logout-btn') });
 loadUsers();

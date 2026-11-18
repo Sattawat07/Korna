@@ -121,6 +121,27 @@
   color: var(--color-on-primary);
 }
 
+.pill:has(.custom-select) {
+  border: 0;
+  background: transparent;
+  height: auto;
+}
+
+.pill:has(.custom-select) .pill__chevron {
+  display: none;
+}
+
+.pill:has(.custom-select) .custom-select-trigger {
+  height: 42px;
+  border-radius: var(--radius-md);
+}
+
+.pill.is-active:has(.custom-select) .custom-select-trigger {
+  background-color: var(--accent-yellow);
+  border-color: var(--accent-yellow-strong);
+  color: #3B2B20;
+}
+
 .pill select {
   appearance: none;
   field-sizing: content; /* กว้างตามชื่อที่เลือก ไม่ตัดท้ายข้อความ */
@@ -274,9 +295,17 @@
 }
 
 .card__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: var(--fs-md);
   font-weight: 600;
   color: var(--color-text);
+  min-width: 0;
+}
+
+.card__owner {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -352,16 +381,12 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  display: inline-flex;
-  align-items: center;
   gap: 4px;
   height: 24px;
   padding: 0 10px;
-  border-radius: var(--radius-pill);
-  background: var(--color-scrim);
-  color: var(--color-on-scrim);
+  margin-right: 0;
   font-size: 11px;
-  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 .card__type .icon {

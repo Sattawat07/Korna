@@ -19,11 +19,10 @@ function ensureLogoutModal({ title, description }) {
 
   backdrop.innerHTML = `
     <div class="korna-logout-card">
-      <button type="button" class="korna-logout-close" aria-label="Close">✕</button>
+      <button type="button" class="korna-logout-close" aria-label="Close" autofocus>✕</button>
       <h2 class="korna-logout-title" id="shared-logout-title"></h2>
       <p class="korna-logout-desc" id="shared-logout-desc"></p>
       <div class="korna-logout-actions">
-        <button type="button" class="korna-logout-stay" autofocus>Stay here</button>
         <button type="button" class="korna-logout-confirm">Log out</button>
       </div>
     </div>
@@ -32,7 +31,6 @@ function ensureLogoutModal({ title, description }) {
   backdrop.querySelector('#shared-logout-title').textContent = title;
   backdrop.querySelector('#shared-logout-desc').textContent = description;
 
-  const stayBtn = backdrop.querySelector('.korna-logout-stay');
   const closeBtn = backdrop.querySelector('.korna-logout-close');
   const confirmBtn = backdrop.querySelector('.korna-logout-confirm');
 
@@ -43,7 +41,6 @@ function ensureLogoutModal({ title, description }) {
     }
   };
 
-  stayBtn.addEventListener('click', close);
   closeBtn.addEventListener('click', close);
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) close();
@@ -55,7 +52,7 @@ function ensureLogoutModal({ title, description }) {
       return;
     }
     if (e.key === 'Tab') {
-      const focusables = [closeBtn, stayBtn, confirmBtn].filter((el) => !el.disabled);
+      const focusables = [closeBtn, confirmBtn].filter((el) => !el.disabled);
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
       if (e.shiftKey && document.activeElement === first) {
@@ -95,6 +92,6 @@ export function bindLogoutConfirm(
     const modal = ensureLogoutModal({ title, description });
     returnFocusEl = document.activeElement;
     modal.classList.add('active');
-    modal.querySelector('.korna-logout-stay')?.focus();
+    modal.querySelector('.korna-logout-close')?.focus();
   });
 }

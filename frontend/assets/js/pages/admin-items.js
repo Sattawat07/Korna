@@ -222,13 +222,7 @@ nextBtn.addEventListener('click', () => {
 });
 
 loadAdminProfile(document.getElementById('admin-name'));
-setupLogoutModal({
-  triggerBtn: document.getElementById('logout-btn'),
-  modal: document.getElementById('logout-modal'),
-  stayBtn: document.getElementById('logout-stay-btn'),
-  confirmBtn: document.getElementById('logout-confirm-btn'),
-  closeBtn: document.getElementById('logout-close-btn'),
-});
+setupLogoutModal({ triggerBtn: document.getElementById('logout-btn') });
 loadCategories();
 // เปิดจากหน้า Dashboard พร้อมคำค้น เช่น admin-items.html?q=Desk%20lamp
 const initialQuery = new URLSearchParams(window.location.search).get('q');

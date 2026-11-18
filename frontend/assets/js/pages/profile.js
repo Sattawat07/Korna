@@ -4,6 +4,7 @@ import { escapeHtml, formatDate, itemStatusLabel, requestStatusLabel } from '../
 import { setupNotifications } from '../shared/notifications.js';
 import { errorText, loadMe } from '../shared/session.js';
 import { bindLogoutConfirm } from '../shared/logout-modal.js';
+import { enhanceSelect } from '../shared/custom-select.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
 import { checkSourceFile, openCropper } from '../shared/cropper.js';
 import {
@@ -152,18 +153,26 @@ function thumb(url, alt) {
   return `<span class="row__thumb">${url ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" />` : icon('image')}</span>`;
 }
 
+function requestStatusPillClass(status) {
+  if (status === 'accepted') return 'status-completed';
+  if (status === 'rejected') return 'status-removed';
+  return 'status-pending';
+}
+
 function itemRow(item) {
   const count = item.requests_count ?? 0;
   const canDelete = item.status === 'available';
+  const typeCls = item.type === 'swap' ? 'type-swap' : 'type-free';
+  const typeLabel = item.type === 'swap' ? 'Swap' : 'Free';
   return `
     <li class="row" data-row-item="${item.id}">
       ${thumb(item.image_url, item.title)}
       <div class="row__info">
         <button class="row__title" type="button" data-view-item="${item.id}" aria-label="View details: ${escapeHtml(item.title)}">${escapeHtml(item.title)}</button>
-        <p class="row__sub">${escapeHtml(item.category.name)}</p>
+        <p class="row__sub"><span class="type-pill ${typeCls}">${typeLabel}</span>${escapeHtml(item.category.name)}</p>
       </div>
       <div class="row__person"><span class="avatar">${icon('users')}</span>${count} request${count === 1 ? '' : 's'}</div>
-      <div class="row__status"><span class="status status--${item.status}">${itemStatusLabel(item)}</span></div>
+      <div class="row__status"><span class="status-pill status-${escapeHtml(item.status)}">${escapeHtml(itemStatusLabel(item))}</span></div>
       <span class="row__date">${formatDate(item.created_at)}</span>
       <div class="row__actions">
         <button class="btn btn--outline" type="button" data-edit-item="${item.id}" aria-label="Edit: ${escapeHtml(item.title)}" ${canDelete ? '' : 'disabled title="Only available posts can be edited"'}>Edit</button>
@@ -177,6 +186,7 @@ function requestRow(req) {
     req.item.type === 'swap'
       ? `Swap offer: ${escapeHtml(req.swap_offer?.description ?? '')}`
       : escapeHtml(req.message ?? 'Free item request');
+  const typeCls = req.item.type === 'swap' ? 'type-swap' : 'type-free';
   return `
     <li class="row" data-row-request="${req.id}">
       ${thumb(req.item.image_url, req.item.title)}
@@ -184,8 +194,8 @@ function requestRow(req) {
         <button class="row__title" type="button" data-view-request="${req.id}" aria-label="View details: ${escapeHtml(req.item.title)}">${escapeHtml(req.item.title)}</button>
         <p class="row__sub">${sub}</p>
       </div>
-      <div class="row__person"><span class="avatar">${icon(req.item.type === 'swap' ? 'swap' : 'gift')}</span>${req.item.type === 'swap' ? 'Swap' : 'Free'}</div>
-      <div class="row__status"><span class="status status--${req.status}">${requestStatusLabel(req.status)}</span></div>
+      <div class="row__person"><span class="type-pill ${typeCls}">${req.item.type === 'swap' ? 'Swap' : 'Free'}</span></div>
+      <div class="row__status"><span class="status-pill ${requestStatusPillClass(req.status)}">${escapeHtml(requestStatusLabel(req.status))}</span></div>
       <span class="row__date">${formatDate(req.created_at)}</span>
       <div class="row__actions"></div>
     </li>`;
@@ -391,7 +401,7 @@ function requestCard(req, canDecide) {
     <div class="req__head">
       ${avatarHtml(req.requester)}
       <div class="req__who"><p class="req__name">${escapeHtml(req.requester.name)}</p><p class="req__time">${formatDate(req.created_at)}</p></div>
-      <span class="status status--${req.status}">${requestStatusLabel(req.status)}</span>
+      <span class="status-pill ${requestStatusPillClass(req.status)}">${escapeHtml(requestStatusLabel(req.status))}</span>
     </div>
     ${req.message ? `<p class="req__msg">“${escapeHtml(req.message)}”</p>` : ''}
     ${offer ? `<div class="req__offer"><p class="details-label">Swap offer</p><p class="details-text">${escapeHtml(offer.description)}</p>${offerImgs.length ? imageViewer(offerImgs.map(escapeHtml), 'Offer') : ''}</div>` : ''}
@@ -522,9 +532,11 @@ function bindEditItem() {
       const options = list.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
       select.innerHTML = options;
       select.value = String(item.category.id);
+      enhanceSelect(select).sync();
       const wanted = form.elements.namedItem('desired_category_id');
       wanted.innerHTML = `<option value="">Wanted category (any)</option>${options}`;
       wanted.value = item.swap_details?.desired_category?.id ? String(item.swap_details.desired_category.id) : '';
+      enhanceSelect(wanted).sync();
       form.elements.namedItem('title').value = item.title;
       form.elements.namedItem('description').value = item.description ?? '';
       form.elements.namedItem('defects').value = item.defects ?? '';

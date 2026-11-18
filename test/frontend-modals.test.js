@@ -43,6 +43,7 @@ globalThis.fetch = async (url, config) => {
 const { bindLogoutConfirm } = await import('../frontend/assets/js/shared/logout-modal.js');
 const { goToLogin } = await import('../frontend/assets/js/shared/session.js');
 const {
+  escapeHtml,
   setupAdminDeleteModal,
   setupAdminItemDetailModal,
 } = await import('../frontend/assets/js/shared/admin-common.js');
@@ -57,6 +58,13 @@ function resetState() {
     json: async () => ({ ok: true }),
   });
 }
+
+test('escapeHtml safely coerces numbers and nullish values', () => {
+  assert.equal(escapeHtml(42), '42');
+  assert.equal(escapeHtml(null), '');
+  assert.equal(escapeHtml(undefined), '');
+  assert.equal(escapeHtml('<script>"x"</script>'), '&lt;script&gt;&quot;x&quot;&lt;/script&gt;');
+});
 
 test('goToLogin replaces history with ./login.html', () => {
   resetState();
@@ -82,7 +90,7 @@ test('bindLogoutConfirm requires confirmation and supports cancel/Escape without
   assert.ok(modal, 'shared logout modal should be mounted');
   assert.equal(modal.classList.contains('active'), true);
   assert.equal(fetchCalls.length, 0, 'clicking logout button must not call API immediately');
-  assert.equal(document.activeElement, modal.querySelector('.korna-logout-stay'));
+  assert.equal(document.activeElement, modal.querySelector('.korna-logout-close'));
 
   // Escape closes without calling logout API and restores focus
   modal.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -90,10 +98,10 @@ test('bindLogoutConfirm requires confirmation and supports cancel/Escape without
   assert.equal(fetchCalls.length, 0);
   assert.equal(document.activeElement, triggerBtn);
 
-  // Reopen and cancel via Stay here button
+  // Reopen and cancel via Close (X) button
   triggerBtn.click();
   assert.equal(modal.classList.contains('active'), true);
-  modal.querySelector('.korna-logout-stay').click();
+  modal.querySelector('.korna-logout-close').click();
   assert.equal(modal.classList.contains('active'), false);
   assert.equal(fetchCalls.length, 0);
 });

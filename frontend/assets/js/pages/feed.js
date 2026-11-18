@@ -3,6 +3,7 @@ import { hydrateIcons, icon } from '../shared/icons.js';
 import { escapeHtml, itemStatusLabel } from '../shared/format.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
 import { setupNotifications } from '../shared/notifications.js';
+import { enhanceSelect } from '../shared/custom-select.js';
 import { errorText, goToLogin, loadMeOptional } from '../shared/session.js';
 import { clearErrorOnInput, clearFieldErrors, openModal, setupModals, setupUploader, showDialog, showFieldErrors, toast } from '../shared/ui.js';
 
@@ -82,6 +83,13 @@ function fillCategorySelects(categories) {
   const options = categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
   document.querySelectorAll('#filter-category, select[name="category_id"], select[name="desired_category_id"]').forEach((select) => {
     select.insertAdjacentHTML('beforeend', options);
+    enhanceSelect(select).sync();
+  });
+}
+
+function initCustomSelects() {
+  document.querySelectorAll('.filters select, #create-post-form select').forEach((select) => {
+    enhanceSelect(select);
   });
 }
 
@@ -97,6 +105,7 @@ function restoreView() {
 
 // ---------- ตัวกรอง ----------
 function bindFilters() {
+  initCustomSelects();
   let timer;
   $('search-input').addEventListener('input', (event) => {
     window.clearTimeout(timer);
@@ -221,6 +230,7 @@ function cardHtml(item) {
     ? `<img class="card__media-bg" src="${src}" alt="" aria-hidden="true" loading="lazy" /><img src="${src}" alt="" loading="lazy" />`
     : icon('image');
   const typeTag = item.type === 'swap' ? `${icon('swap')}Swap` : `${icon('gift')}Free`;
+  const typeCls = item.type === 'swap' ? 'type-swap' : 'type-free';
   let disabledAttr = '';
   if (isMine) disabledAttr = 'disabled title="This is your post"';
   else if (requested) disabledAttr = 'disabled title="Request sent"';
@@ -229,12 +239,12 @@ function cardHtml(item) {
       <header class="card__header">
         ${avatarHtml(item.owner)}
         <div class="card__meta">
-          <p class="card__name">${escapeHtml(item.owner.name)} <span class="card__state">- (${itemStatusLabel(item)})</span></p>
+          <p class="card__name"><span class="card__owner">${escapeHtml(item.owner.name)}</span><span class="status-pill status-${escapeHtml(item.status)}">${escapeHtml(itemStatusLabel(item))}</span></p>
           <p class="card__caption">${escapeHtml(item.title)}</p>
         </div>
       </header>
       <button class="card__media" type="button" data-open-item="${item.id}" aria-label="View details of ${escapeHtml(item.title)}">
-        ${media}<span class="card__type">${typeTag}</span>
+        ${media}<span class="card__type type-pill ${typeCls}">${typeTag}</span>
       </button>
       <footer class="card__footer">
         <button class="chip card__request" type="button" data-request="${item.id}" aria-label="${requested ? 'Requested' : 'Request'}: ${escapeHtml(item.title)}" ${disabledAttr}>${requested ? 'Requested' : 'Request'}</button>
