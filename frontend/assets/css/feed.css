@@ -139,7 +139,12 @@
 .pill.is-active:has(.custom-select) .custom-select-trigger {
   background-color: var(--accent-yellow);
   border-color: var(--accent-yellow-strong);
-  color: #3B2B20;
+  color: var(--text-on-accent);
+}
+
+.pill.is-active:has(.custom-select) .custom-select-trigger:hover {
+  background-color: var(--accent-yellow-strong);
+  color: var(--text-on-accent);
 }
 
 .pill select {
