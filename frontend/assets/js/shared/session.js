@@ -2,7 +2,7 @@
 import { request } from '../api.js';
 
 export function goToLogin() {
-  window.location.href = './login.html';
+  window.location.replace('./login.html');
 }
 
 /** ข้อมูลผู้ใช้ที่ล็อกอินอยู่ (GET /api/me) — ถ้ายังไม่ล็อกอิน (401) จะพาไปหน้า login */

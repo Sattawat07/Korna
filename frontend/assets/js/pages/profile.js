@@ -2,7 +2,8 @@ import { request } from '../api.js';
 import { hydrateIcons, icon } from '../shared/icons.js';
 import { escapeHtml, formatDate, itemStatusLabel, requestStatusLabel } from '../shared/format.js';
 import { setupNotifications } from '../shared/notifications.js';
-import { errorText, goToLogin, loadMe } from '../shared/session.js';
+import { errorText, loadMe } from '../shared/session.js';
+import { bindLogoutConfirm } from '../shared/logout-modal.js';
 import { avatarHtml, gallery, itemFacts, itemText } from '../shared/item-view.js';
 import { checkSourceFile, openCropper } from '../shared/cropper.js';
 import {
@@ -82,15 +83,13 @@ async function refreshStats() {
 }
 
 function bindLogout() {
-  $('logout-btn').addEventListener('click', async () => {
-    const btn = $('logout-btn');
-    btn.disabled = true;
-    try {
-      await request('/auth/logout', { method: 'POST' });
-    } catch {
-      /* ถึง session หมดอายุไปแล้วก็พาไปหน้า login ได้ */
-    }
-    goToLogin();
+  bindLogoutConfirm($('logout-btn'), {
+    title: 'Log out of KORNA?',
+    description: 'You will need to sign in again to manage your items and requests.',
+  });
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) loadMe();
   });
 }
 

@@ -1,15 +1,15 @@
 import { request } from '../api.js';
 import {
   avatarHtml,
-  closeModalDialog,
   enhanceSelect,
   escapeHtml,
   formatShortDate,
   getStatusDisplay,
   getTypeDisplay,
   loadAdminProfile,
-  openModalDialog,
   sanitizeImageUrl,
+  setupAdminDeleteModal,
+  setupAdminItemDetailModal,
   setupLogoutModal,
 } from '../shared/admin-common.js';
 
@@ -25,22 +25,23 @@ const prevBtn = document.getElementById('prev-page-btn');
 const nextBtn = document.getElementById('next-page-btn');
 const resetBtn = document.getElementById('reset-filters-btn');
 
-// Detail modal
-const detailModal = document.getElementById('item-detail-modal');
-const detailCloseBtn = document.getElementById('detail-close-btn');
-const detailDeleteBtn = document.getElementById('detail-delete-btn');
+const deleteModalApi = setupAdminDeleteModal({
+  onDeleted: async () => {
+    const leavesList = currentStatus !== '' && currentStatus !== 'removed';
+    if (leavesList && currentPage > 1 && currentItems.length <= 1) {
+      currentPage -= 1;
+    }
+    await loadItems();
+  },
+});
 
-// Delete modal
-const deleteModal = document.getElementById('delete-modal');
-const deleteCloseBtn = document.getElementById('delete-close-btn');
-const deleteCancelBtn = document.getElementById('delete-cancel-btn');
-const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
-const deleteError = document.getElementById('delete-error');
+const detailModalApi = setupAdminItemDetailModal({
+  onDelete: (item) => deleteModalApi.open(item),
+});
 
 let currentPage = 1;
 let currentStatus = '';
 let currentItems = [];
-let selectedItem = null;
 let searchTimer = null;
 let loadItemsSeq = 0;
 
@@ -135,56 +136,17 @@ function renderItemsTable(items) {
     .join('');
 }
 
-function openDetailModal(item) {
-  selectedItem = item;
-  const st = getStatusDisplay(item.status);
-  const tp = getTypeDisplay(item.type);
-  document.getElementById('detail-title').textContent = item.title;
-  document.getElementById('detail-sub').textContent =
-    `${item.category?.name || 'Uncategorized'} · Listed ${formatShortDate(item.created_at)}`;
-  document.getElementById('detail-owner').textContent = item.owner?.name || 'Unknown';
-  document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
-  document.getElementById('detail-type-wrap').innerHTML = `<span class="type-pill ${tp.cls}">${tp.label}</span>`;
-  document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
-
-  const swapWrap = document.getElementById('detail-swap-wrap');
-  if (item.type === 'swap' && item.swap_details?.desired_description) {
-    document.getElementById('detail-swap-desc').textContent = item.swap_details.desired_description;
-    swapWrap.classList.remove('is-hidden');
-  } else {
-    swapWrap.classList.add('is-hidden');
-  }
-
-  const imgEl = document.getElementById('detail-img');
-  if (item.image_url) {
-    imgEl.src = item.image_url;
-    imgEl.classList.remove('is-hidden');
-  } else {
-    imgEl.classList.add('is-hidden');
-  }
-
-  detailDeleteBtn.disabled = item.status === 'removed';
-  openModalDialog(detailModal);
-}
-
-function openDeleteModal(item) {
-  selectedItem = item;
-  deleteError.textContent = '';
-  document.getElementById('delete-item-name').textContent = item.title;
-  openModalDialog(deleteModal);
-}
-
 tbody.addEventListener('click', (e) => {
   const delBtn = e.target.closest('button[data-action="delete"]');
   if (delBtn) {
     const item = currentItems.find((i) => String(i.id) === delBtn.dataset.id);
-    if (item) openDeleteModal(item);
+    if (item) deleteModalApi.open(item);
     return;
   }
   const row = e.target.closest('tr[data-id]');
   if (!row) return;
   const item = currentItems.find((i) => String(i.id) === row.dataset.id);
-  if (item) openDetailModal(item);
+  if (item) detailModalApi.open(item);
 });
 
 tbody.addEventListener('keydown', (e) => {
@@ -194,43 +156,7 @@ tbody.addEventListener('keydown', (e) => {
   if (!row) return;
   e.preventDefault();
   const item = currentItems.find((i) => String(i.id) === row.dataset.id);
-  if (item) openDetailModal(item);
-});
-
-detailCloseBtn.addEventListener('click', () => closeModalDialog(detailModal));
-detailModal.addEventListener('click', (e) => {
-  if (e.target === detailModal) closeModalDialog(detailModal);
-});
-detailDeleteBtn.addEventListener('click', () => {
-  closeModalDialog(detailModal);
-  if (selectedItem) openDeleteModal(selectedItem);
-});
-
-deleteCloseBtn.addEventListener('click', () => closeModalDialog(deleteModal));
-deleteCancelBtn.addEventListener('click', () => closeModalDialog(deleteModal));
-deleteModal.addEventListener('click', (e) => {
-  if (e.target === deleteModal) closeModalDialog(deleteModal);
-});
-
-deleteConfirmBtn.addEventListener('click', async () => {
-  if (!selectedItem) return;
-  deleteConfirmBtn.disabled = true;
-  deleteError.textContent = '';
-
-  try {
-    await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
-    closeModalDialog(deleteModal);
-    // แท็บ All / Removed ยังแสดงโพสต์ที่ลบแล้ว (สถานะ removed) จึงไม่ต้องถอยหน้า
-    const leavesList = currentStatus !== '' && currentStatus !== 'removed';
-    if (leavesList && currentPage > 1 && currentItems.length <= 1) {
-      currentPage -= 1;
-    }
-    await loadItems();
-  } catch (error) {
-    deleteError.textContent = error.message || 'Unable to delete item.';
-  } finally {
-    deleteConfirmBtn.disabled = false;
-  }
+  if (item) detailModalApi.open(item);
 });
 
 // Filters & Tabs
