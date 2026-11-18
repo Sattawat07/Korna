@@ -12,6 +12,7 @@
   --text-main: #5E4636;
   --text-muted: #7A5A3E;
   --text-light: #FFFFFF;
+  --text-on-accent: #3B2B20;
   --text-danger: #B3402E;
   --dot-taupe: #DFD2BA;
 }
@@ -20,7 +21,7 @@
   --bg-page: #1E1712;
   --bg-sidebar: #2A2019;
   --bg-card: #2A2019;
-  --bg-hover: #352820;
+  --bg-hover: #46362B;
   --bg-surface-muted: #3E2F24;
   --bg-dark: #3E2F24;
   --accent-yellow: #FCEB9B;
@@ -59,11 +60,8 @@
 [data-theme="dark"] .nav-item:hover,
 [data-theme="dark"] .logout-btn:hover,
 [data-theme="dark"] .btn-outline:hover,
-[data-theme="dark"] .filter-select:hover,
-[data-theme="dark"] .custom-select-trigger:hover,
-[data-theme="dark"] .custom-select-option:hover,
-[data-theme="dark"] .custom-select-option:focus-visible {
-  background-color: #352820;
+[data-theme="dark"] .filter-select:hover {
+  background-color: var(--bg-hover);
 }
 
 [data-theme="dark"] .filter-select {
@@ -77,7 +75,7 @@
 [data-theme="dark"] .btn-yellow,
 [data-theme="dark"] .cta-btn {
   background-color: var(--accent-yellow);
-  color: #3B2B20;
+  color: var(--text-on-accent);
 }
 
 [data-theme="dark"] .nav-item.active:hover,
@@ -95,7 +93,7 @@
 
 [data-theme="dark"] .status-pending {
   background-color: var(--accent-yellow);
-  color: #3B2B20;
+  color: var(--text-on-accent);
 }
 
 [data-theme="dark"] .status-removed {
@@ -419,9 +417,10 @@
   cursor: pointer;
 }
 
-.custom-select-option:hover,
-.custom-select-option:focus-visible {
+.custom-select-option:hover:not(.selected),
+.custom-select-option:focus-visible:not(.selected) {
   background-color: var(--bg-hover);
+  color: var(--text-main);
 }
 
 .custom-select-option:focus-visible {
@@ -431,8 +430,14 @@
 
 .custom-select-option.selected {
   background-color: var(--accent-yellow);
-  color: #3B2B20;
+  color: var(--text-on-accent);
   font-weight: 700;
+}
+
+.custom-select-option.selected:hover,
+.custom-select-option.selected:focus-visible {
+  background-color: var(--accent-yellow-strong);
+  color: var(--text-on-accent);
 }
 
 /* Shared Status & Type Pills (Feed & Admin) */
