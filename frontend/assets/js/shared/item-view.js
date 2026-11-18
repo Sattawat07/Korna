@@ -13,13 +13,14 @@ export function avatarHtml(person, className = 'avatar') {
 
 /** หมวดหมู่ / ประเภท / สถานะ / วันที่โพสต์ */
 export function itemFacts(item) {
+  const typeCls = item.type === 'swap' ? 'type-swap' : 'type-free';
   const rows = [
-    ['Category', item.category.name],
-    ['Type', item.type === 'swap' ? 'Swap' : 'Free'],
-    ['Status', itemStatusLabel(item)],
-    ['Posted', formatDate(item.created_at)],
+    ['Category', escapeHtml(item.category.name)],
+    ['Type', `<span class="type-pill ${typeCls}">${item.type === 'swap' ? 'Swap' : 'Free'}</span>`],
+    ['Status', `<span class="status-pill status-${escapeHtml(item.status)}">${escapeHtml(itemStatusLabel(item))}</span>`],
+    ['Posted', escapeHtml(formatDate(item.created_at))],
   ];
-  return `<dl class="facts">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${escapeHtml(v)}</dd></div>`).join('')}</dl>`;
+  return `<dl class="facts">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
 }
 
 /** รายละเอียด / ตำหนิ / สิ่งที่อยากได้แลก */

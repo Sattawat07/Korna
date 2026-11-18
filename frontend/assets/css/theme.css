@@ -3,6 +3,8 @@
   --bg-page: #F7F1E6;
   --bg-sidebar: #FFF8E8;
   --bg-card: #FFF8E8;
+  --bg-hover: #F6EED9;
+  --bg-surface-muted: #EFE5D0;
   --bg-dark: #5E4636;
   --accent-yellow: #FCEB9B;
   --accent-yellow-strong: #F6DF7B;
@@ -10,6 +12,7 @@
   --text-main: #5E4636;
   --text-muted: #7A5A3E;
   --text-light: #FFFFFF;
+  --text-danger: #B3402E;
   --dot-taupe: #DFD2BA;
 }
 
@@ -17,6 +20,8 @@
   --bg-page: #1E1712;
   --bg-sidebar: #2A2019;
   --bg-card: #2A2019;
+  --bg-hover: #352820;
+  --bg-surface-muted: #3E2F24;
   --bg-dark: #3E2F24;
   --accent-yellow: #FCEB9B;
   --accent-yellow-strong: #F6DF7B;
@@ -24,6 +29,7 @@
   --text-main: #F7F1E6;
   --text-muted: #CBB9A4;
   --text-light: #FFF8E8;
+  --text-danger: #F5A499;
   --dot-taupe: #6E5949;
 
   /* base.css tokens (Feed & Profile) */
@@ -200,105 +206,6 @@
   border-color: var(--text-muted);
 }
 
-/* Dropdown ทุกหน้า: Chrome/Edge ที่รองรับ base-select ได้เมนูแบบใหม่ เบราว์เซอร์อื่นใช้แบบเดิม */
-@supports (appearance: base-select) {
-  /* :not([multiple]) ให้ชนะ appearance: none ของ .pill select / .soft-input select */
-  select:not([multiple]),
-  ::picker(select) {
-    appearance: base-select;
-  }
-
-  select:not([multiple]) {
-    align-items: center;
-    cursor: pointer;
-  }
-
-  /* หน้า Feed / Profile มีลูกศรของตัวเองอยู่แล้ว */
-  .pill select::picker-icon,
-  .soft-input select::picker-icon {
-    display: none;
-  }
-
-  select::picker-icon {
-    color: var(--text-muted);
-    transition: rotate 0.2s ease;
-  }
-
-  select:open::picker-icon {
-    rotate: 180deg;
-  }
-
-  ::picker(select) {
-    min-width: anchor-size(width);
-    max-height: none;
-    margin-block: 6px;
-    padding: 6px;
-    border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    box-shadow: 0 18px 44px rgba(62, 47, 36, 0.18);
-    overflow-y: auto;
-    opacity: 1;
-    translate: 0 0;
-    transition:
-      opacity 0.15s ease,
-      translate 0.15s ease,
-      overlay 0.15s allow-discrete,
-      display 0.15s allow-discrete;
-  }
-
-  ::picker(select):popover-open {
-    opacity: 1;
-  }
-
-  @starting-style {
-    ::picker(select):popover-open {
-      opacity: 0;
-      translate: 0 -4px;
-    }
-  }
-
-  [data-theme="dark"] ::picker(select) {
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
-  }
-
-  select option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background-color: transparent;
-    color: var(--text-main);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.12s ease;
-  }
-
-  select option:hover,
-  select option:focus-visible {
-    background-color: color-mix(in srgb, var(--accent-yellow) 35%, var(--bg-card));
-    outline: none;
-  }
-
-  select option:checked {
-    background-color: var(--accent-yellow);
-    color: #3b2b20;
-    font-weight: 600;
-  }
-
-  select option::checkmark {
-    order: 1;
-    margin-left: auto;
-  }
-
-  select option[value='']:not(:checked) {
-    color: var(--text-muted);
-  }
-}
-
 /* Shared Logout Confirmation Modal (used by Profile & Admin) */
 .korna-logout-backdrop {
   position: fixed;
@@ -340,6 +247,11 @@
   background-color: var(--bg-card);
   color: var(--text-main);
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.korna-logout-close:hover {
+  background-color: var(--bg-hover);
 }
 
 .korna-logout-title {
@@ -362,21 +274,6 @@
   margin-top: 4px;
 }
 
-.korna-logout-stay {
-  background-color: var(--accent-yellow);
-  border: 1px solid var(--accent-yellow-strong);
-  border-radius: 10px;
-  padding: 9px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #3b2b20;
-  cursor: pointer;
-}
-
-.korna-logout-stay:hover {
-  background-color: var(--accent-yellow-strong);
-}
-
 .korna-logout-confirm {
   background-color: var(--bg-card);
   border: 1px solid var(--border-soft);
@@ -386,6 +283,11 @@
   font-weight: 600;
   color: var(--text-main);
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.korna-logout-confirm:hover:not(:disabled) {
+  background-color: var(--bg-hover);
 }
 
 .korna-logout-confirm:disabled {
@@ -394,8 +296,193 @@
 }
 
 .korna-logout-close:focus-visible,
-.korna-logout-stay:focus-visible,
 .korna-logout-confirm:focus-visible {
   outline: 2px solid var(--text-main);
   outline-offset: 2px;
+}
+
+/* Shared Themed Custom Select Dropdown */
+.is-hidden {
+  display: none !important;
+}
+
+.custom-select {
+  position: relative;
+  min-width: 120px;
+}
+
+.field .custom-select {
+  width: 100%;
+}
+
+.field .custom-select-trigger {
+  min-height: 42px;
+}
+
+.select-wrap:has(.custom-select)::after {
+  display: none;
+}
+
+.soft-input.select-wrap .custom-select {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.soft-input.select-wrap .custom-select-trigger {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  height: 100%;
+  border-radius: 0;
+}
+
+.soft-input.select-wrap .custom-select-trigger:hover {
+  background: transparent;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.custom-select-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-trigger:hover {
+  background-color: var(--bg-hover);
+}
+
+.custom-select-trigger:focus-visible {
+  outline: 2px solid var(--text-main);
+  outline-offset: 2px;
+}
+
+.custom-select-chevron {
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.custom-select.open .custom-select-chevron {
+  transform: rotate(180deg);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: 280px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 6px;
+  list-style: none;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  z-index: 400;
+}
+
+.custom-select-option {
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.custom-select-option:hover,
+.custom-select-option:focus-visible {
+  background-color: var(--bg-hover);
+}
+
+.custom-select-option:focus-visible {
+  outline: 2px solid var(--text-main);
+  outline-offset: -2px;
+}
+
+.custom-select-option.selected {
+  background-color: var(--accent-yellow);
+  color: #3B2B20;
+  font-weight: 700;
+}
+
+/* Shared Status & Type Pills (Feed & Admin) */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-available {
+  background-color: #EFE5D0;
+  color: var(--text-main);
+}
+
+.status-pending {
+  background-color: var(--accent-yellow);
+  color: var(--text-main);
+}
+
+.status-completed {
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+}
+
+.status-removed {
+  background-color: #F3DFDC;
+  color: #8A372B;
+}
+
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.type-free {
+  background-color: #E7EFE3;
+  color: #2E5B32;
+}
+
+.type-swap {
+  background-color: #F4E6C8;
+  color: #6B4A1F;
 }

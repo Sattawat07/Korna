@@ -100,10 +100,10 @@ test('E2E: member login -> feed search -> profile -> logout cancel/confirm -> br
   assert.equal(activeAfterEsc, 0);
   assert.ok(page.url().includes('/pages/profile.html'));
 
-  // Open logout modal and cancel via Stay here button
+  // Open logout modal and cancel via Close (X) button
   await page.click('#logout-btn');
   await page.waitForSelector('#shared-logout-modal.active');
-  await page.click('.korna-logout-stay');
+  await page.click('.korna-logout-close');
   assert.equal(await page.locator('#shared-logout-modal.active').count(), 0);
   assert.ok(page.url().includes('/pages/profile.html'));
 

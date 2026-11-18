@@ -181,7 +181,7 @@
 }
 
 .modal-error {
-  color: #b3402e;
+  color: var(--text-danger);
   font-size: 12px;
   text-align: center;
   margin-top: 6px;
