@@ -144,24 +144,28 @@ const REQUEST_STATUS = {
   pending: { label: 'Pending', dot: 'dot-yellow', cls: 'status-pending' },
   rejected: { label: 'Cancelled', dot: 'dot-taupe', cls: 'status-available' },
 };
-const itemCache = new Map(); // item_id -> item | null (ถูกลบแล้ว/หาไม่เจอ)
+// item_id -> { item } | { notFound: true } (เก็บเฉพาะผลที่แน่นอน ข้อผิดพลาดอื่นไม่เก็บ เพื่อให้ลองใหม่ได้)
+const itemCache = new Map();
 let recentRequests = [];
 
-let removedItemsPromise = null; // โพสต์ที่ถูกลบ ดูได้ผ่าน API admin เท่านั้น (โหลดครั้งเดียว)
-
+/**
+ * ดึงโพสต์ตาม ID ผ่าน GET /api/admin/items/:id (รวมโพสต์ที่ถูกลบ)
+ * คืน { item } | { notFound: true } เมื่อ API ตอบ 404 | { error: ข้อความจริง } เมื่อผิดพลาดอย่างอื่น
+ */
 async function fetchItem(id) {
   if (itemCache.has(id)) return itemCache.get(id);
-  let item = null;
   try {
-    item = (await request(`/items/${id}`)).item;
-  } catch {
-    removedItemsPromise ??= request('/admin/items?status=removed&limit=50')
-      .then((res) => res.items || [])
-      .catch(() => []);
-    item = (await removedItemsPromise).find((i) => Number(i.id) === Number(id)) ?? null;
+    const result = { item: (await request(`/admin/items/${id}`)).item };
+    itemCache.set(id, result);
+    return result;
+  } catch (error) {
+    if (error.status === 404) {
+      const result = { notFound: true };
+      itemCache.set(id, result);
+      return result;
+    }
+    return { error: error.message || 'Unable to load this post.' };
   }
-  itemCache.set(id, item);
-  return item;
 }
 
 function formatDateTime(iso) {
@@ -179,10 +183,10 @@ function renderRecent(recent) {
     recentEl.innerHTML = recent
       .map((req) => {
         const st = REQUEST_STATUS[req.status] ?? REQUEST_STATUS.pending;
-        const item = itemCache.get(req.item_id);
+        const { item, notFound } = itemCache.get(req.item_id) ?? {};
         const itemText = item
           ? `${item.title}${item.status === 'removed' ? ' (removed)' : ''}`
-          : item === null ? `Item #${req.item_id} (unavailable)` : `Item #${req.item_id}`;
+          : notFound ? `Item #${req.item_id} (not found)` : `Item #${req.item_id}`;
         return `
         <li class="recent-item">
           <button type="button" class="recent-btn" data-request-id="${req.id}" aria-label="View request #${req.id}">
@@ -221,10 +225,14 @@ async function openRecent(requestId) {
   selectedItem = null;
   openModalDialog(recentModal);
 
-  const item = await fetchItem(req.item_id);
+  const { item, notFound, error } = await fetchItem(req.item_id);
   if (!recentModal.classList.contains('active')) return;
-  if (!item) {
-    body.innerHTML = `<p class="subtitle">Post #${req.item_id} is no longer available.</p>`;
+  if (notFound) {
+    body.innerHTML = `<p class="subtitle">Post #${req.item_id} was not found or is no longer available.</p>`;
+    return;
+  }
+  if (error) {
+    body.innerHTML = `<p class="modal-error">Could not load post #${req.item_id}: ${escapeHtml(error)}</p>`;
     return;
   }
   selectedItem = item;
@@ -294,7 +302,6 @@ deleteConfirmBtn.addEventListener('click', async () => {
     await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
     closeModalDialog(deleteModal);
     itemCache.clear();
-    removedItemsPromise = null;
     await loadStats();
   } catch (error) {
     deleteError.textContent = error.message || 'Unable to delete item.';
