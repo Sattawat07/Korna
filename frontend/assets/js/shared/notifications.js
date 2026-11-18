@@ -51,6 +51,7 @@ export function setupNotifications() {
 
   let notifications = [];
   let unread = 0;
+  let total = 0; // จำนวนการแจ้งเตือนทั้งหมดที่ยังไม่ Clear (ไม่ใช่แค่ 20 รายการที่โหลดมา)
 
   const renderBadges = () => {
     buttons.forEach((btn) => {
@@ -65,7 +66,8 @@ export function setupNotifications() {
 
   const renderPanel = (body, { actions = false } = {}) => {
     clearTimeout(confirmTimer);
-    const hasRead = notifications.some((n) => n.read_at);
+    // มีรายการที่อ่านแล้วอยู่ = ทั้งหมด > ที่ยังไม่อ่าน (นับจากเซิร์ฟเวอร์ ครอบคลุมรายการเก่าที่ไม่ได้โหลดมาด้วย)
+    const hasRead = total > unread;
     panel.innerHTML = `
       <div class="notif__head">
         <p class="notif__title">Notifications</p>
@@ -107,6 +109,7 @@ export function setupNotifications() {
     const data = await request('/notifications?limit=20');
     notifications = data.notifications;
     unread = data.unread_count;
+    total = data.pagination?.total ?? notifications.length;
     renderBadges();
   };
 
