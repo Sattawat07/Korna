@@ -103,7 +103,7 @@ resendBtn.addEventListener('click', async () => {
     otpHandler.clear();
     startOtpCountdown();
   } catch (err) {
-    otpError.textContent = 'Failed to resend code.';
+    otpError.textContent = err.message || 'Failed to resend code.';
     resendBtn.disabled = false;
   }
 });
@@ -201,8 +201,11 @@ form.addEventListener('submit', async (event) => {
   } catch (error) {
     if (error.status === 409 && error.code === 'CONFLICT') {
       errorContainer.textContent = 'An account with this email already exists.';
+    } else if (error.status === 400 && error.details && typeof error.details === 'object') {
+      const firstDetail = Object.values(error.details).find(Boolean);
+      errorContainer.textContent = firstDetail || error.message || 'Please check the submitted fields.';
     } else {
-      errorContainer.textContent = 'Unable to proceed with registration. Please try again.';
+      errorContainer.textContent = error.message || 'Unable to proceed with registration. Please try again.';
     }
     errorContainer.style.display = 'block';
   } finally {
