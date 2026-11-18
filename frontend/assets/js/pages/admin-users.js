@@ -1,5 +1,6 @@
 import { request } from '../api.js';
 import {
+  avatarHtml,
   closeModalDialog,
   escapeHtml,
   formatShortDate,
@@ -8,6 +9,7 @@ import {
   loadAdminProfile,
   openModalDialog,
   sanitizeImageUrl,
+  setAvatar,
   setupLogoutModal,
 } from '../shared/admin-common.js';
 
@@ -127,6 +129,7 @@ function clearSelectedUser() {
   loadUserItemsSeq += 1; // ยกเลิกการโหลดโพสต์ของคนเดิมที่อาจค้างอยู่
 
   document.getElementById('selected-user-name').textContent = 'Select a member';
+  setAvatar(document.querySelector('.user-profile-identity .avatar-lg'), null);
   document.getElementById('selected-user-email').textContent = '—';
   const roleBadge = document.getElementById('selected-user-role');
   roleBadge.textContent = 'Member';
@@ -157,11 +160,7 @@ function renderUsersList() {
       return `
         <button type="button" class="user-row-btn ${isActive}" data-user-id="${escapeHtml(u.id)}">
           <div class="user-row-left">
-            <span class="avatar-circle" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-              </svg>
-            </span>
+            ${avatarHtml(u.avatar_url)}
             <div>
               <div class="user-row-name">${escapeHtml(u.name)}</div>
               <div class="user-row-meta">${label} · ${Number(u.items_count ?? 0)} listed items</div>
@@ -180,6 +179,7 @@ async function selectUser(user) {
 
   document.getElementById('selected-user-name').textContent = user.name;
   document.getElementById('selected-user-email').textContent = user.email;
+  setAvatar(document.querySelector('.user-profile-identity .avatar-lg'), user.avatar_url);
   const roleBadge = document.getElementById('selected-user-role');
   roleBadge.textContent = roleLabel(user.role);
   roleBadge.className = `status-pill ${user.role === 'super_admin' ? 'status-pending' : user.role === 'admin' ? 'status-completed' : 'status-available'}`;

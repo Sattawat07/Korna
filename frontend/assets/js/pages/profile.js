@@ -160,14 +160,13 @@ function itemRow(item) {
     <li class="row" data-row-item="${item.id}">
       ${thumb(item.image_url, item.title)}
       <div class="row__info">
-        <p class="row__title">${escapeHtml(item.title)}</p>
+        <button class="row__title" type="button" data-view-item="${item.id}" aria-label="View details: ${escapeHtml(item.title)}">${escapeHtml(item.title)}</button>
         <p class="row__sub">${escapeHtml(item.category.name)}</p>
       </div>
       <div class="row__person"><span class="avatar">${icon('users')}</span>${count} request${count === 1 ? '' : 's'}</div>
       <div class="row__status"><span class="status status--${item.status}">${itemStatusLabel(item)}</span></div>
       <span class="row__date">${formatDate(item.created_at)}</span>
       <div class="row__actions">
-        <button class="btn btn--outline" type="button" data-view-item="${item.id}" aria-label="View details: ${escapeHtml(item.title)}">View details</button>
         <button class="btn btn--outline" type="button" data-edit-item="${item.id}" aria-label="Edit: ${escapeHtml(item.title)}" ${canDelete ? '' : 'disabled title="Only available posts can be edited"'}>Edit</button>
         <button class="btn btn--outline btn--danger" type="button" data-delete="${item.id}" aria-label="Delete: ${escapeHtml(item.title)}" ${canDelete ? '' : 'disabled title="Only available posts can be deleted"'}>Delete</button>
       </div>
@@ -183,15 +182,13 @@ function requestRow(req) {
     <li class="row" data-row-request="${req.id}">
       ${thumb(req.item.image_url, req.item.title)}
       <div class="row__info">
-        <p class="row__title">${escapeHtml(req.item.title)}</p>
+        <button class="row__title" type="button" data-view-request="${req.id}" aria-label="View details: ${escapeHtml(req.item.title)}">${escapeHtml(req.item.title)}</button>
         <p class="row__sub">${sub}</p>
       </div>
       <div class="row__person"><span class="avatar">${icon(req.item.type === 'swap' ? 'swap' : 'gift')}</span>${req.item.type === 'swap' ? 'Swap' : 'Free'}</div>
       <div class="row__status"><span class="status status--${req.status}">${requestStatusLabel(req.status)}</span></div>
       <span class="row__date">${formatDate(req.created_at)}</span>
-      <div class="row__actions">
-        <button class="btn btn--outline" type="button" data-view-request="${req.id}" aria-label="View details: ${escapeHtml(req.item.title)}">View details</button>
-      </div>
+      <div class="row__actions"></div>
     </li>`;
 }
 

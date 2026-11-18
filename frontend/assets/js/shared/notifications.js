@@ -1,5 +1,6 @@
 // Popup การแจ้งเตือนที่ปุ่มกระดิ่ง
 // API: GET /api/notifications, PATCH /api/notifications/:id/read, GET /api/items/:id (ชื่อโพสต์)
+//      DELETE /api/notifications/read (Clear read), DELETE /api/notifications (Clear all)
 import { request } from '../api.js';
 import { icon } from './icons.js';
 import { escapeHtml, formatRelative } from './format.js';
@@ -50,6 +51,7 @@ export function setupNotifications() {
 
   let notifications = [];
   let unread = 0;
+  let total = 0;
 
   const renderBadges = () => {
     buttons.forEach((btn) => {
@@ -60,13 +62,27 @@ export function setupNotifications() {
     });
   };
 
-  const renderPanel = (body) => {
+  let confirmTimer = 0;
+
+  const renderPanel = (body, { actions = false } = {}) => {
+    clearTimeout(confirmTimer);
+    // นับจากยอดรวมของเซิร์ฟเวอร์ ไม่ใช่แค่ 20 รายการที่โหลดมา
+    const hasRead = total > unread;
     panel.innerHTML = `
       <div class="notif__head">
         <p class="notif__title">Notifications</p>
         <span class="notif__count">${unread} unread</span>
       </div>
-      <ul class="notif__list">${body}</ul>`;
+      <ul class="notif__list">${body}</ul>
+      ${
+        actions
+          ? `<div class="notif__foot">
+        <button type="button" class="notif__action" data-clear="read" ${hasRead ? '' : 'disabled'}
+          title="${hasRead ? 'Remove notifications you have already read' : 'No read notifications to clear'}">Clear read</button>
+        <button type="button" class="notif__action notif__action--danger" data-clear="all">Clear all</button>
+      </div>`
+          : ''
+      }`;
   };
 
   const renderList = () => {
@@ -77,14 +93,15 @@ export function setupNotifications() {
           const kind = n.type === 'request_received' ? 'send' : n.decision === 'accepted' ? 'gift' : 'close';
           const tone = n.type === 'request_decided' ? `notif__icon--${n.decision}` : '';
           const avatar = n.actor.avatar_url
-            ? `<span class="notif__icon"><img src="${escapeHtml(n.actor.avatar_url)}" alt="" /></span>`
-            : `<span class="notif__icon ${tone}">${icon(kind)}</span>`;
+            ? `<span class="avatar notif__icon"><img src="${escapeHtml(n.actor.avatar_url)}" alt="" /></span>`
+            : `<span class="avatar notif__icon ${tone}">${icon(kind)}</span>`;
           return `<li><a class="notif__item ${n.read_at ? '' : 'is-unread'}" href="${target(n)}" data-notif="${n.id}">
             ${avatar}
             <span class="notif__body"><span class="notif__text">${message(n)}</span><span class="notif__time">${formatRelative(n.created_at)}</span></span>
           </a></li>`;
         })
         .join(''),
+      { actions: true },
     );
   };
 
@@ -92,6 +109,7 @@ export function setupNotifications() {
     const data = await request('/notifications?limit=20');
     notifications = data.notifications;
     unread = data.unread_count;
+    total = data.pagination?.total ?? notifications.length;
     renderBadges();
   };
 
@@ -140,8 +158,38 @@ export function setupNotifications() {
     });
   });
 
+  const clearNotifications = async (btn) => {
+    const all = btn.dataset.clear === 'all';
+    if (all && !btn.classList.contains('is-confirming')) {
+      btn.classList.add('is-confirming');
+      btn.textContent = 'Click again to clear all';
+      clearTimeout(confirmTimer);
+      confirmTimer = setTimeout(() => {
+        btn.classList.remove('is-confirming');
+        btn.textContent = 'Clear all';
+      }, 4000);
+      return;
+    }
+    panel.querySelectorAll('[data-clear]').forEach((b) => {
+      b.disabled = true;
+    });
+    btn.textContent = 'Clearing...';
+    try {
+      await request(all ? '/notifications' : '/notifications/read', { method: 'DELETE' });
+      await load();
+      renderList();
+      (panel.querySelector('[data-clear]:not(:disabled)') ?? anchor)?.focus();
+    } catch (error) {
+      renderList();
+      const foot = panel.querySelector('.notif__foot');
+      foot?.insertAdjacentHTML('afterbegin', `<span class="notif__error">${escapeHtml(errorText(error, 'Unable to clear notifications.'))}</span>`);
+    }
+  };
+
   panel.addEventListener('click', async (e) => {
     e.stopPropagation();
+    const clearBtn = e.target.closest('[data-clear]');
+    if (clearBtn) return clearNotifications(clearBtn);
     const link = e.target.closest('[data-notif]');
     if (!link) return;
     e.preventDefault();

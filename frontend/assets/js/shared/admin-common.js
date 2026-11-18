@@ -18,6 +18,36 @@ export function sanitizeImageUrl(url) {
   return '';
 }
 
+const PERSON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>';
+
+export function avatarHtml(url, className = 'avatar-circle') {
+  const safe = sanitizeImageUrl(url);
+  const img = safe ? `<img class="avatar-img" src="${safe}" alt="" loading="lazy">` : '';
+  return `<span class="${className}${safe ? ' has-img' : ''}" aria-hidden="true">${PERSON_SVG}${img}</span>`;
+}
+
+export function setAvatar(holder, url) {
+  if (!holder) return;
+  holder.querySelector('.avatar-img')?.remove();
+  holder.classList.remove('has-img');
+  const safe = sanitizeImageUrl(url);
+  if (!safe) return;
+  holder.insertAdjacentHTML('beforeend', `<img class="avatar-img" src="${safe}" alt="">`);
+  holder.classList.add('has-img');
+}
+
+document.addEventListener(
+  'error',
+  (e) => {
+    const img = e.target;
+    if (img instanceof HTMLImageElement && img.classList.contains('avatar-img')) {
+      img.parentElement?.classList.remove('has-img');
+      img.remove();
+    }
+  },
+  true,
+);
+
 export function formatShortDate(isoString) {
   if (!isoString) return '—';
   return new Date(isoString).toLocaleDateString('en-GB', {
@@ -58,6 +88,7 @@ export async function loadAdminProfile(nameEl, onLoaded) {
       if (me.user.name && nameEl) {
         nameEl.textContent = me.user.name;
       }
+      setAvatar(nameEl?.closest('.admin-profile-pill')?.querySelector('.avatar-circle'), me.user.avatar_url);
       onLoaded?.(me.user);
     } catch {
       window.location.replace('login.html');

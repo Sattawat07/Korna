@@ -114,8 +114,6 @@
   list-style: none;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
   z-index: 400;
-  max-height: 240px;
-  overflow-y: auto;
 }
 
 .custom-select-option {
@@ -650,4 +648,22 @@
 
 .user-items-pager[hidden] {
   display: none;
+}
+
+.custom-select-menu {
+  left: auto;
+  width: max-content;
+}
+
+.custom-select-option {
+  white-space: nowrap;
+}
+
+.user-row-btn {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.user-row-btn:hover:not(.active) {
+  background-color: color-mix(in srgb, var(--accent-yellow) 22%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--accent-yellow-strong) 45%, var(--border-soft));
 }

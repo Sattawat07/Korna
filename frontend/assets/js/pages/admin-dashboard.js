@@ -1,27 +1,25 @@
 // Admin Dashboard page logic — Vanilla JS
 import { request } from '../api.js';
 import {
+  avatarHtml,
   closeModalDialog,
   escapeHtml,
-  formatShortDate as formatFullShortDate,
   getStatusDisplay,
   getTypeDisplay,
   loadAdminProfile,
   openModalDialog,
+  sanitizeImageUrl,
   setupLogoutModal,
 } from '../shared/admin-common.js';
 
-let itemsById = new Map();
-let selectedItem = null;
+const pctOf = (n, total) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
-const detailModal = document.getElementById('item-detail-modal');
-const detailCloseBtn = document.getElementById('detail-close-btn');
-const detailDeleteBtn = document.getElementById('detail-delete-btn');
-const deleteModal = document.getElementById('delete-modal');
-const deleteCloseBtn = document.getElementById('delete-close-btn');
-const deleteCancelBtn = document.getElementById('delete-cancel-btn');
-const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
-const deleteError = document.getElementById('delete-error');
+function tipHtml(title, rows) {
+  return `<strong>${escapeHtml(title)}</strong>${rows
+    .map(([label, value, dot]) => `<span class="chart-tip-row">${dot ? `<i class="legend-dot ${dot}"></i>` : ''}${escapeHtml(label)}<b>${escapeHtml(value)}</b></span>`)
+    .join('')}`;
+}
+
 
 function formatShortDate(isoDate) {
   const d = new Date(`${isoDate}T00:00:00`);
@@ -69,29 +67,27 @@ function renderStats(stats) {
       const acc = day.accepted || 0;
       const pen = day.pending || 0;
       const rej = day.rejected || 0;
-      const totalDay = acc + pen + rej;
+      const dayTotal = acc + pen + rej;
       const accHeight = Math.round((acc / maxVal) * 95);
       const penHeight = Math.round((pen / maxVal) * 95);
-      const shortDate = formatShortDate(day.date);
+      const longDate = new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const tip = tipHtml(`${longDate} · ${dayTotal} request${dayTotal === 1 ? '' : 's'}`, [
+        ['Completed', `${acc} · ${pctOf(acc, dayTotal)}%`, 'dot-brown'],
+        ['Pending', `${pen} · ${pctOf(pen, dayTotal)}%`, 'dot-yellow'],
+        ['Cancelled', `${rej} · ${pctOf(rej, dayTotal)}%`, 'dot-taupe'],
+      ]);
       return `
-        <div class="bar-day" tabindex="0" aria-label="${shortDate}: ${acc} completed, ${pen} pending, ${rej} cancelled">
-          <div class="chart-tooltip" role="tooltip">
-            <div class="tooltip-title">${shortDate} · ${totalDay} requests</div>
-            <div class="tooltip-row"><span class="legend-dot dot-brown"></span>Completed: <strong>${acc}</strong></div>
-            <div class="tooltip-row"><span class="legend-dot dot-yellow"></span>Pending: <strong>${pen}</strong></div>
-            <div class="tooltip-row"><span class="legend-dot dot-taupe"></span>Cancelled: <strong>${rej}</strong></div>
-          </div>
+        <div class="bar-day" tabindex="0" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(`${longDate}: ${acc} completed, ${pen} pending, ${rej} cancelled`)}">
           <div class="bar-pair">
             <div class="bar-col">
               <span class="bar-count">${acc}</span>
               <div class="bar-fill completed" style="height: ${accHeight}px"></div>
             </div>
             <div class="bar-col">
-              <span class="bar-count">${pen > 0 ? pen : ''}</span>
               <div class="bar-fill pending" style="height: ${penHeight}px"></div>
             </div>
           </div>
-          <span class="bar-date">${shortDate}</span>
+          <span class="bar-date">${formatShortDate(day.date)}</span>
         </div>
       `;
     })
@@ -102,17 +98,9 @@ function renderStats(stats) {
   const pct = (n) => (reqTotal > 0 ? Math.round((n / reqTotal) * 100) : 0);
 
   document.getElementById('requests-summary-sub').textContent = `${reqTotal} requests total`;
-  const segCompleted = document.getElementById('seg-completed');
-  const segPending = document.getElementById('seg-pending');
-  const segCancelled = document.getElementById('seg-cancelled');
-
-  segCompleted.style.width = `${pct(acceptedCount)}%`;
-  segPending.style.width = `${pct(pendingCount)}%`;
-  segCancelled.style.width = `${pct(rejectedCount)}%`;
-
-  segCompleted.dataset.tooltip = `Completed: ${acceptedCount} requests (${pct(acceptedCount)}%)`;
-  segPending.dataset.tooltip = `Pending: ${pendingCount} requests (${pct(pendingCount)}%)`;
-  segCancelled.dataset.tooltip = `Cancelled: ${rejectedCount} requests (${pct(rejectedCount)}%)`;
+  document.getElementById('seg-completed').style.width = `${pct(acceptedCount)}%`;
+  document.getElementById('seg-pending').style.width = `${pct(pendingCount)}%`;
+  document.getElementById('seg-cancelled').style.width = `${pct(rejectedCount)}%`;
 
   document.getElementById('req-completed-count').textContent = acceptedCount;
   document.getElementById('req-completed-pct').textContent = `${pct(acceptedCount)}%`;
@@ -120,43 +108,262 @@ function renderStats(stats) {
   document.getElementById('req-pending-pct').textContent = `${pct(pendingCount)}%`;
   document.getElementById('req-cancelled-count').textContent = rejectedCount;
   document.getElementById('req-cancelled-pct').textContent = `${pct(rejectedCount)}%`;
+  setSegmentTips(reqTotal, 'request', [
+    ['seg-completed', 'Completed', acceptedCount, 'dot-brown'],
+    ['seg-pending', 'Pending', pendingCount, 'dot-yellow'],
+    ['seg-cancelled', 'Cancelled', rejectedCount, 'dot-taupe'],
+  ]);
 
   renderPostsByType(stats.by_type);
   renderPostsByCategory(stats.by_category);
 
-  // Recent activity
+  renderRecent(stats.recent_requests || []);
+}
+
+// parts: [id ของแถบ, ชื่อ, จำนวน, สีจุด]
+function setSegmentTips(total, noun, parts) {
+  parts.forEach(([segId, label, count, dot]) => {
+    const tip = tipHtml(label, [[`${count} ${noun}${count === 1 ? '' : 's'}`, `${pctOf(count, total)}%`, dot]]);
+    const seg = document.getElementById(segId);
+    seg.dataset.tip = tip;
+    const legendRow = document.querySelector(`[data-seg="${segId}"]`);
+    if (legendRow) {
+      legendRow.dataset.tip = tip;
+      legendRow.tabIndex = 0;
+    }
+  });
+}
+
+// ---------- Recent activity ----------
+const REQUEST_STATUS = {
+  accepted: { label: 'Completed', dot: 'dot-brown', cls: 'status-completed' },
+  pending: { label: 'Pending', dot: 'dot-yellow', cls: 'status-pending' },
+  rejected: { label: 'Cancelled', dot: 'dot-taupe', cls: 'status-available' },
+};
+// เก็บเฉพาะผลที่แน่นอน (พบ / 404) ข้อผิดพลาดอื่นไม่เก็บ เพื่อให้กดเปิดใหม่แล้วลองโหลดอีกครั้งได้
+const itemCache = new Map();
+let recentRequests = [];
+
+// คืน { item } | { notFound: true } | { error: message }
+async function fetchItem(id) {
+  if (itemCache.has(id)) return itemCache.get(id);
+  try {
+    const result = { item: (await request(`/admin/items/${id}`)).item };
+    itemCache.set(id, result);
+    return result;
+  } catch (error) {
+    if (error.status === 404) {
+      const result = { notFound: true };
+      itemCache.set(id, result);
+      return result;
+    }
+    return { error: error.message || 'Unable to load this post.' };
+  }
+}
+
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function renderRecent(recent) {
+  recentRequests = recent;
   const recentEl = document.getElementById('recent-activity-list');
-  const recent = stats.recent_requests || [];
   if (recent.length === 0) {
     recentEl.innerHTML = '<li class="recent-item"><span class="recent-desc">No recent requests.</span></li>';
     return;
   }
-
-  recentEl.innerHTML = recent
-    .map((reqItem) => {
-      const dotClass = reqItem.status === 'accepted' ? 'dot-brown' : reqItem.status === 'pending' ? 'dot-yellow' : 'dot-taupe';
-      const statusLabel = reqItem.status === 'accepted' ? 'Completed' : reqItem.status === 'rejected' ? 'Cancelled' : 'Pending';
-      const fullItem = itemsById.get(Number(reqItem.item_id));
-      const itemLabel = fullItem
-        ? `${escapeHtml(fullItem.title)} · by ${escapeHtml(fullItem.owner?.name || 'Unknown')}`
-        : `Item #${escapeHtml(reqItem.item_id)}`;
-      return `
+  const draw = () => {
+    recentEl.innerHTML = recent
+      .map((req) => {
+        const st = REQUEST_STATUS[req.status] ?? REQUEST_STATUS.pending;
+        const { item, notFound } = itemCache.get(req.item_id) ?? {};
+        const itemText = item
+          ? `${item.title}${item.status === 'removed' ? ' (removed)' : ''}`
+          : notFound ? `Item #${req.item_id} (not found)` : `Item #${req.item_id}`;
+        return `
         <li class="recent-item">
-          <button type="button" class="recent-item-btn" data-item-id="${escapeHtml(reqItem.item_id)}">
-            <div class="recent-left">
-              <span class="legend-dot ${dotClass}"></span>
-              <div>
-                <div class="recent-title">Request #${escapeHtml(reqItem.id)} · ${statusLabel}</div>
-                <div class="recent-desc">${itemLabel}</div>
-              </div>
-            </div>
-            <span class="recent-time">${formatRelativeTime(reqItem.created_at)}</span>
+          <button type="button" class="recent-btn" data-request-id="${req.id}" aria-label="View request #${req.id}">
+            <span class="recent-left">
+              <span class="legend-dot ${st.dot}"></span>
+              <span>
+                <span class="recent-title">Request #${req.id} · ${st.label}</span>
+                <span class="recent-desc">${escapeHtml(itemText)}</span>
+              </span>
+            </span>
+            <span class="recent-time">${formatRelativeTime(req.created_at)}<span class="recent-chevron" aria-hidden="true">&rsaquo;</span></span>
           </button>
-        </li>
-      `;
-    })
-    .join('');
+        </li>`;
+      })
+      .join('');
+  };
+  draw();
+  Promise.all([...new Set(recent.map((r) => r.item_id))].map(fetchItem)).then(draw);
 }
+
+const recentModal = document.getElementById('recent-modal');
+
+async function openRecent(requestId) {
+  const req = recentRequests.find((r) => r.id === requestId);
+  if (!req) return;
+  const st = REQUEST_STATUS[req.status] ?? REQUEST_STATUS.pending;
+  document.getElementById('recent-modal-title').textContent = `Request #${req.id}`;
+  document.getElementById('recent-modal-status').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
+  document.getElementById('recent-modal-time').textContent = `Sent ${formatDateTime(req.created_at)} · ${formatRelativeTime(req.created_at)}`;
+  const body = document.getElementById('recent-modal-item');
+  const link = document.getElementById('recent-modal-link');
+  body.innerHTML = '<p class="subtitle">Loading post...</p>';
+  link.hidden = true;
+  recentDeleteBtn.hidden = true;
+  selectedItem = null;
+  openModalDialog(recentModal);
+
+  const { item, notFound, error } = await fetchItem(req.item_id);
+  if (!recentModal.classList.contains('active')) return;
+  if (notFound) {
+    body.innerHTML = `<p class="subtitle">Post #${req.item_id} was not found or is no longer available.</p>`;
+    return;
+  }
+  if (error) {
+    body.innerHTML = `<p class="modal-error">Could not load post #${req.item_id}: ${escapeHtml(error)}</p>`;
+    return;
+  }
+  selectedItem = item;
+  const img = sanitizeImageUrl(item.image_url);
+  const itemStatus = getStatusDisplay(item.status);
+  const itemType = getTypeDisplay(item.type);
+  const wants = item.type === 'swap' ? item.swap_details?.desired_description : '';
+  body.innerHTML = `
+    ${img ? `<img class="modal-detail-img" src="${img}" alt="">` : ''}
+    <div class="recent-modal-grid">
+      <div>
+        <div class="meta-label">Post</div>
+        <div class="meta-value">${escapeHtml(item.title)}</div>
+        <div class="recent-desc"><span class="type-pill ${itemType.cls}">${itemType.label}</span>${escapeHtml(item.category?.name || 'Uncategorized')}</div>
+      </div>
+      <div>
+        <div class="meta-label">Owner</div>
+        <div class="owner-cell">${avatarHtml(item.owner?.avatar_url)}<span class="meta-value">${escapeHtml(item.owner?.name || 'Unknown')}</span></div>
+      </div>
+      <div>
+        <div class="meta-label">Post status</div>
+        <span class="status-pill ${itemStatus.cls}">${escapeHtml(itemStatus.label)}</span>
+      </div>
+    </div>
+    ${item.description ? `<div class="meta-label">Description</div><p class="recent-modal-text">${escapeHtml(item.description)}</p>` : ''}
+    ${wants ? `<div class="meta-label">Looking to swap for</div><p class="recent-modal-text">${escapeHtml(wants)}</p>` : ''}`;
+  body.querySelector('.modal-detail-img')?.addEventListener('error', (e) => e.target.remove(), { once: true });
+  link.href = `admin-items.html?q=${encodeURIComponent(item.title)}`;
+  link.hidden = false;
+  recentDeleteBtn.hidden = item.status === 'removed';
+}
+
+document.getElementById('recent-activity-list').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-request-id]');
+  if (btn) openRecent(Number(btn.dataset.requestId));
+});
+recentModal.addEventListener('click', (e) => {
+  if (e.target === recentModal || e.target.closest('[data-close-recent]')) closeModalDialog(recentModal);
+});
+
+// ---------- Delete from popup ----------
+let selectedItem = null;
+const recentDeleteBtn = document.getElementById('recent-delete-btn');
+const deleteModal = document.getElementById('delete-modal');
+const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+const deleteError = document.getElementById('delete-error');
+
+recentDeleteBtn.addEventListener('click', () => {
+  if (!selectedItem) return;
+  closeModalDialog(recentModal);
+  deleteError.textContent = '';
+  document.getElementById('delete-item-name').textContent = selectedItem.title;
+  openModalDialog(deleteModal);
+});
+['delete-close-btn', 'delete-cancel-btn'].forEach((id) =>
+  document.getElementById(id).addEventListener('click', () => closeModalDialog(deleteModal)),
+);
+deleteModal.addEventListener('click', (e) => {
+  if (e.target === deleteModal) closeModalDialog(deleteModal);
+});
+deleteConfirmBtn.addEventListener('click', async () => {
+  if (!selectedItem) return;
+  deleteConfirmBtn.disabled = true;
+  deleteError.textContent = '';
+  try {
+    await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
+    closeModalDialog(deleteModal);
+    itemCache.clear();
+    await loadStats();
+  } catch (error) {
+    deleteError.textContent = error.message || 'Unable to delete item.';
+  } finally {
+    deleteConfirmBtn.disabled = false;
+  }
+});
+
+// ---------- Chart tooltip ----------
+const chartTip = document.createElement('div');
+chartTip.className = 'chart-tip';
+chartTip.setAttribute('role', 'tooltip');
+document.body.append(chartTip);
+let tipTarget = null;
+
+function placeTip(x, y) {
+  const w = chartTip.offsetWidth;
+  const h = chartTip.offsetHeight;
+  const left = Math.min(window.innerWidth - w - 8, Math.max(8, x - w / 2));
+  const top = y - h - 14 < 8 ? y + 18 : y - h - 14;
+  chartTip.style.left = `${left}px`;
+  chartTip.style.top = `${top}px`;
+}
+
+function showTip(el, x, y) {
+  tipTarget = el;
+  chartTip.innerHTML = el.dataset.tip;
+  chartTip.classList.add('is-visible');
+  if (x === undefined) {
+    const r = el.getBoundingClientRect();
+    placeTip(r.left + r.width / 2, r.top);
+  } else {
+    placeTip(x, y);
+  }
+  highlight(el);
+}
+
+function hideTip() {
+  tipTarget = null;
+  chartTip.classList.remove('is-visible');
+  highlight(null);
+}
+
+function highlight(el) {
+  document.querySelectorAll('.stacked-bar.is-focused').forEach((bar) => bar.classList.remove('is-focused'));
+  document.querySelectorAll('.stacked-seg.is-active').forEach((seg) => seg.classList.remove('is-active'));
+  if (!el) return;
+  const seg = el.classList.contains('stacked-seg') ? el : document.getElementById(el.dataset.seg || '');
+  if (seg) {
+    seg.classList.add('is-active');
+    seg.parentElement.classList.add('is-focused');
+  }
+}
+
+document.addEventListener('pointerover', (e) => {
+  const el = e.target.closest?.('[data-tip]');
+  if (el && el !== tipTarget) showTip(el, e.clientX, e.clientY);
+  else if (!el && tipTarget) hideTip();
+});
+document.addEventListener('pointermove', (e) => {
+  if (tipTarget) placeTip(e.clientX, e.clientY);
+});
+document.addEventListener('focusin', (e) => {
+  const el = e.target.closest?.('[data-tip]');
+  if (el) showTip(el);
+  else if (tipTarget) hideTip();
+});
+document.addEventListener('focusout', (e) => {
+  if (e.target === tipTarget) hideTip();
+});
+window.addEventListener('scroll', hideTip, { passive: true });
 
 // จำนวนโพสต์แยก Free / Swap (by_type — รวมโพสต์ที่ถูกลบด้วย ตามที่ API ระบุ)
 function renderPostsByType(byType = {}) {
@@ -172,6 +379,10 @@ function renderPostsByType(byType = {}) {
   document.getElementById('type-free-pct').textContent = `${pct(free)}%`;
   document.getElementById('type-swap-count').textContent = swap;
   document.getElementById('type-swap-pct').textContent = `${pct(swap)}%`;
+  setSegmentTips(total, 'post', [
+    ['seg-type-free', 'Free', free, 'dot-yellow'],
+    ['seg-type-swap', 'Swap', swap, 'dot-brown'],
+  ]);
 }
 
 // จำนวนโพสต์แยกหมวด (by_category) — เรียงมากไปน้อย แสดง 6 หมวดแรก
@@ -192,12 +403,15 @@ function renderPostsByCategory(byCategory = []) {
   const rest = sorted.length - shown.length;
   subEl.textContent = rest > 0 ? `Top ${shown.length} of ${sorted.length} categories` : `${sorted.length} categories with posts`;
   const max = Math.max(...shown.map((c) => Number(c.total)));
+  const allPosts = sorted.reduce((sum, c) => sum + Number(c.total), 0);
 
   listEl.innerHTML = shown
     .map((c) => {
       const width = Math.max(4, Math.round((Number(c.total) / max) * 100));
+      const n = Number(c.total);
+      const tip = tipHtml(c.name, [[`${n} post${n === 1 ? '' : 's'}`, `${pctOf(n, allPosts)}% of all posts`, 'dot-brown']]);
       return `
-        <li>
+        <li tabindex="0" data-tip="${escapeHtml(tip)}">
           <span class="category-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
           <span class="category-track" aria-hidden="true"><span class="category-fill" style="width: ${width}%"></span></span>
           <strong>${Number(c.total)}</strong>
@@ -207,101 +421,14 @@ function renderPostsByCategory(byCategory = []) {
     .join('');
 }
 
-function openDetailModal(item) {
-  selectedItem = item;
-  const st = getStatusDisplay(item.status);
-  const tp = getTypeDisplay(item.type);
-  document.getElementById('detail-title').textContent = item.title;
-  document.getElementById('detail-sub').textContent =
-    `${item.category?.name || 'Uncategorized'} · Listed ${formatFullShortDate(item.created_at)}`;
-  document.getElementById('detail-owner').textContent = item.owner?.name || 'Unknown';
-  document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${st.label}</span>`;
-  document.getElementById('detail-type-wrap').innerHTML = `<span class="type-pill ${tp.cls}">${tp.label}</span>`;
-  document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
-
-  const swapWrap = document.getElementById('detail-swap-wrap');
-  if (item.type === 'swap' && item.swap_details?.desired_description) {
-    document.getElementById('detail-swap-desc').textContent = item.swap_details.desired_description;
-    swapWrap.classList.remove('is-hidden');
-  } else {
-    swapWrap.classList.add('is-hidden');
-  }
-
-  const imgEl = document.getElementById('detail-img');
-  if (item.image_url) {
-    imgEl.src = item.image_url;
-    imgEl.classList.remove('is-hidden');
-  } else {
-    imgEl.classList.add('is-hidden');
-  }
-
-  detailDeleteBtn.disabled = item.status === 'removed';
-  openModalDialog(detailModal);
-}
-
-document.getElementById('recent-activity-list')?.addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-item-id]');
-  if (!btn) return;
-  const itemId = Number(btn.dataset.itemId);
-  let item = itemsById.get(itemId);
-  if (!item) {
-    try {
-      const res = await request(`/items/${itemId}`);
-      item = res.item;
-    } catch {
-      try {
-        const remRes = await request('/admin/items?status=removed&limit=50');
-        item = (remRes.items || []).find((i) => Number(i.id) === itemId) || null;
-      } catch {
-        return;
-      }
-    }
-  }
-  if (item) openDetailModal(item);
-});
-
-detailCloseBtn?.addEventListener('click', () => closeModalDialog(detailModal));
-detailModal?.addEventListener('click', (e) => {
-  if (e.target === detailModal) closeModalDialog(detailModal);
-});
-detailDeleteBtn?.addEventListener('click', () => {
-  closeModalDialog(detailModal);
-  if (selectedItem) {
-    deleteError.textContent = '';
-    document.getElementById('delete-item-name').textContent = selectedItem.title;
-    openModalDialog(deleteModal);
-  }
-});
-
-deleteCloseBtn?.addEventListener('click', () => closeModalDialog(deleteModal));
-deleteCancelBtn?.addEventListener('click', () => closeModalDialog(deleteModal));
-deleteModal?.addEventListener('click', (e) => {
-  if (e.target === deleteModal) closeModalDialog(deleteModal);
-});
-deleteConfirmBtn?.addEventListener('click', async () => {
-  if (!selectedItem) return;
-  deleteConfirmBtn.disabled = true;
-  deleteError.textContent = '';
-  try {
-    await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
-    closeModalDialog(deleteModal);
-    await initDashboard();
-  } catch (error) {
-    deleteError.textContent = error.message || 'Unable to delete item.';
-  } finally {
-    deleteConfirmBtn.disabled = false;
-  }
-});
-
 async function initDashboard() {
   await loadAdminProfile(document.getElementById('admin-name'));
+  await loadStats();
+}
 
+async function loadStats() {
   try {
-    const [stats, itemsRes] = await Promise.all([
-      request('/admin/stats'),
-      request('/admin/items?limit=50').catch(() => ({ items: [] })),
-    ]);
-    itemsById = new Map((itemsRes.items || []).map((i) => [Number(i.id), i]));
+    const stats = await request('/admin/stats');
     renderStats(stats);
   } catch (error) {
     const listEl = document.getElementById('recent-activity-list');

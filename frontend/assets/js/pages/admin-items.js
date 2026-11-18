@@ -1,5 +1,6 @@
 import { request } from '../api.js';
 import {
+  avatarHtml,
   closeModalDialog,
   enhanceSelect,
   escapeHtml,
@@ -117,11 +118,7 @@ function renderItemsTable(items) {
           </td>
           <td>
             <div class="owner-cell">
-              <span class="avatar-circle" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-                </svg>
-              </span>
+              ${avatarHtml(item.owner?.avatar_url)}
               <span>${escapeHtml(item.owner?.name || 'Unknown')}</span>
             </div>
           </td>
@@ -223,7 +220,9 @@ deleteConfirmBtn.addEventListener('click', async () => {
   try {
     await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
     closeModalDialog(deleteModal);
-    if (currentPage > 1 && currentItems.length <= 1) {
+    // แท็บ All / Removed ยังแสดงโพสต์ที่ลบแล้ว (สถานะ removed) จึงไม่ต้องถอยหน้า
+    const leavesList = currentStatus !== '' && currentStatus !== 'removed';
+    if (leavesList && currentPage > 1 && currentItems.length <= 1) {
       currentPage -= 1;
     }
     await loadItems();
@@ -288,4 +287,7 @@ setupLogoutModal({
   closeBtn: document.getElementById('logout-close-btn'),
 });
 loadCategories();
+// เปิดจากหน้า Dashboard พร้อมคำค้น เช่น admin-items.html?q=Desk%20lamp
+const initialQuery = new URLSearchParams(window.location.search).get('q');
+if (initialQuery) searchInput.value = initialQuery;
 loadItems();
