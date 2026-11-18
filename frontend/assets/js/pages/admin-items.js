@@ -162,13 +162,30 @@ tbody.addEventListener('keydown', (e) => {
 // Filters & Tabs
 function syncTabs(status) {
   currentStatus = status;
-  tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.status === status));
+  tabBtns.forEach((b) => {
+    const isActive = b.dataset.status === status;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', String(isActive));
+    b.tabIndex = isActive ? 0 : -1;
+  });
   currentPage = 1;
   loadItems();
 }
 
-tabBtns.forEach((btn) => {
+tabBtns.forEach((btn, idx) => {
   btn.addEventListener('click', () => syncTabs(btn.dataset.status));
+  btn.addEventListener('keydown', (e) => {
+    let nextIdx = -1;
+    if (e.key === 'ArrowRight') nextIdx = (idx + 1) % tabBtns.length;
+    else if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + tabBtns.length) % tabBtns.length;
+    else if (e.key === 'Home') nextIdx = 0;
+    else if (e.key === 'End') nextIdx = tabBtns.length - 1;
+    if (nextIdx >= 0) {
+      e.preventDefault();
+      tabBtns[nextIdx].focus();
+      syncTabs(tabBtns[nextIdx].dataset.status);
+    }
+  });
 });
 typeSelect.addEventListener('change', () => {
   currentPage = 1;
