@@ -1,4 +1,5 @@
 import { request } from '../api.js';
+import { bindLogoutConfirm } from './logout-modal.js';
 
 export function escapeHtml(value) {
   return String(value ?? '')
@@ -107,27 +108,103 @@ export async function loadAdminProfile(nameEl, onLoaded) {
   await verifyAdminFn();
 }
 
-export function setupLogoutModal({ triggerBtn, modal, stayBtn, confirmBtn, closeBtn }) {
-  if (!triggerBtn || !modal) return;
-  const open = () => openModalDialog(modal);
-  const close = () => closeModalDialog(modal);
+export function setupLogoutModal({ triggerBtn }) {
+  bindLogoutConfirm(triggerBtn, {
+    title: 'Log out of Admin?',
+    description: 'You will need to sign in again to access Admin.',
+  });
+}
 
-  triggerBtn.addEventListener('click', open);
-  stayBtn?.addEventListener('click', close);
-  closeBtn?.addEventListener('click', close);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) close();
+export function setupAdminDeleteModal({ onDeleted } = {}) {
+  const modal = document.getElementById('delete-modal');
+  const closeBtn = document.getElementById('delete-close-btn');
+  const cancelBtn = document.getElementById('delete-cancel-btn');
+  const confirmBtn = document.getElementById('delete-confirm-btn');
+  const errorEl = document.getElementById('delete-error');
+  const nameEl = document.getElementById('delete-item-name');
+  let targetItem = null;
+
+  closeBtn?.addEventListener('click', () => closeModalDialog(modal));
+  cancelBtn?.addEventListener('click', () => closeModalDialog(modal));
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModalDialog(modal);
   });
 
   confirmBtn?.addEventListener('click', async () => {
+    if (!targetItem) return;
     confirmBtn.disabled = true;
+    errorEl.textContent = '';
     try {
-      await request('/auth/logout', { method: 'POST' });
-    } catch {
-      // Redirect even if session already expired
+      await request(`/admin/items/${targetItem.id}`, { method: 'DELETE' });
+      closeModalDialog(modal);
+      await onDeleted?.(targetItem);
+    } catch (error) {
+      errorEl.textContent = error.message || 'Unable to delete item.';
+    } finally {
+      confirmBtn.disabled = false;
     }
-    window.location.href = 'login.html';
   });
+
+  return {
+    open(item) {
+      if (!item || !modal) return;
+      targetItem = item;
+      errorEl.textContent = '';
+      nameEl.textContent = item.title;
+      openModalDialog(modal);
+    },
+  };
+}
+
+export function setupAdminItemDetailModal({ onDelete } = {}) {
+  const modal = document.getElementById('item-detail-modal');
+  const closeBtn = document.getElementById('detail-close-btn');
+  const deleteBtn = document.getElementById('detail-delete-btn');
+  let currentItem = null;
+
+  closeBtn?.addEventListener('click', () => closeModalDialog(modal));
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModalDialog(modal);
+  });
+  deleteBtn?.addEventListener('click', () => {
+    closeModalDialog(modal);
+    if (currentItem) onDelete?.(currentItem);
+  });
+
+  return {
+    open(item, ownerFallback = 'Unknown') {
+      if (!item || !modal) return;
+      currentItem = item;
+      const st = getStatusDisplay(item.status);
+      const tp = getTypeDisplay(item.type);
+      document.getElementById('detail-title').textContent = item.title;
+      document.getElementById('detail-sub').textContent =
+        `${item.category?.name || 'Uncategorized'} · Listed ${formatShortDate(item.created_at)}`;
+      document.getElementById('detail-owner').textContent = item.owner?.name || ownerFallback;
+      document.getElementById('detail-status-wrap').innerHTML = `<span class="status-pill ${st.cls}">${escapeHtml(st.label)}</span>`;
+      document.getElementById('detail-type-wrap').innerHTML = `<span class="type-pill ${tp.cls}">${escapeHtml(tp.label)}</span>`;
+      document.getElementById('detail-desc').textContent = item.description || 'No description provided.';
+
+      const swapWrap = document.getElementById('detail-swap-wrap');
+      if (item.type === 'swap' && item.swap_details?.desired_description) {
+        document.getElementById('detail-swap-desc').textContent = item.swap_details.desired_description;
+        swapWrap.classList.remove('is-hidden');
+      } else {
+        swapWrap.classList.add('is-hidden');
+      }
+
+      const imgEl = document.getElementById('detail-img');
+      if (item.image_url) {
+        imgEl.src = item.image_url;
+        imgEl.classList.remove('is-hidden');
+      } else {
+        imgEl.classList.add('is-hidden');
+      }
+
+      deleteBtn.disabled = item.status === 'removed';
+      openModalDialog(modal);
+    },
+  };
 }
 
 const modalReturnFocus = new WeakMap();
@@ -136,7 +213,9 @@ export function openModalDialog(modal) {
   if (!modal) return;
   modalReturnFocus.set(modal, document.activeElement);
   modal.classList.add('active');
-  const focusable = modal.querySelector('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  const focusable =
+    modal.querySelector('[autofocus]:not([disabled])') ||
+    modal.querySelector('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
   focusable?.focus();
 }
 

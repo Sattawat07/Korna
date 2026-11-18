@@ -298,3 +298,104 @@
     color: var(--text-muted);
   }
 }
+
+/* Shared Logout Confirmation Modal (used by Profile & Admin) */
+.korna-logout-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(45, 34, 27, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1100;
+}
+
+.korna-logout-backdrop.active {
+  display: flex;
+}
+
+.korna-logout-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--text-main);
+}
+
+.korna-logout-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.korna-logout-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  padding-right: 32px;
+}
+
+.korna-logout-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.korna-logout-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.korna-logout-stay {
+  background-color: var(--accent-yellow);
+  border: 1px solid var(--accent-yellow-strong);
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3b2b20;
+  cursor: pointer;
+}
+
+.korna-logout-stay:hover {
+  background-color: var(--accent-yellow-strong);
+}
+
+.korna-logout-confirm {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.korna-logout-confirm:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.korna-logout-close:focus-visible,
+.korna-logout-stay:focus-visible,
+.korna-logout-confirm:focus-visible {
+  outline: 2px solid var(--text-main);
+  outline-offset: 2px;
+}

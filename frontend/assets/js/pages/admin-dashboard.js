@@ -9,6 +9,7 @@ import {
   loadAdminProfile,
   openModalDialog,
   sanitizeImageUrl,
+  setupAdminDeleteModal,
   setupLogoutModal,
 } from '../shared/admin-common.js';
 
@@ -268,37 +269,17 @@ recentModal.addEventListener('click', (e) => {
 // ---------- Delete from popup ----------
 let selectedItem = null;
 const recentDeleteBtn = document.getElementById('recent-delete-btn');
-const deleteModal = document.getElementById('delete-modal');
-const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
-const deleteError = document.getElementById('delete-error');
+const deleteModalApi = setupAdminDeleteModal({
+  async onDeleted() {
+    itemCache.clear();
+    await loadStats();
+  },
+});
 
 recentDeleteBtn.addEventListener('click', () => {
   if (!selectedItem) return;
   closeModalDialog(recentModal);
-  deleteError.textContent = '';
-  document.getElementById('delete-item-name').textContent = selectedItem.title;
-  openModalDialog(deleteModal);
-});
-['delete-close-btn', 'delete-cancel-btn'].forEach((id) =>
-  document.getElementById(id).addEventListener('click', () => closeModalDialog(deleteModal)),
-);
-deleteModal.addEventListener('click', (e) => {
-  if (e.target === deleteModal) closeModalDialog(deleteModal);
-});
-deleteConfirmBtn.addEventListener('click', async () => {
-  if (!selectedItem) return;
-  deleteConfirmBtn.disabled = true;
-  deleteError.textContent = '';
-  try {
-    await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
-    closeModalDialog(deleteModal);
-    itemCache.clear();
-    await loadStats();
-  } catch (error) {
-    deleteError.textContent = error.message || 'Unable to delete item.';
-  } finally {
-    deleteConfirmBtn.disabled = false;
-  }
+  deleteModalApi.open(selectedItem);
 });
 
 // ---------- Chart tooltip ----------
