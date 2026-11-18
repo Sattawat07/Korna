@@ -1450,7 +1450,6 @@ html[data-theme='dark'] .toast {
   color: rgba(255, 248, 232, 0.8);
 }
 
-/* ปุ่มล้างการแจ้งเตือนท้าย popup */
 .notif__foot {
   display: flex;
   align-items: center;

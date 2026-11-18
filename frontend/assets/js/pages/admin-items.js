@@ -220,8 +220,7 @@ deleteConfirmBtn.addEventListener('click', async () => {
   try {
     await request(`/admin/items/${selectedItem.id}`, { method: 'DELETE' });
     closeModalDialog(deleteModal);
-    // ลบ = เปลี่ยนสถานะเป็น removed: แท็บ All ยังแสดงโพสต์นี้อยู่ จึงไม่ต้องถอยหน้า
-    // ถอยหน้าเฉพาะแท็บสถานะอื่นที่โพสต์จะหายไปจากรายการ และเป็นโพสต์สุดท้ายของหน้านั้น
+    // แท็บ All / Removed ยังแสดงโพสต์ที่ลบแล้ว (สถานะ removed) จึงไม่ต้องถอยหน้า
     const leavesList = currentStatus !== '' && currentStatus !== 'removed';
     if (leavesList && currentPage > 1 && currentItems.length <= 1) {
       currentPage -= 1;

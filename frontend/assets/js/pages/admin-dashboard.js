@@ -14,7 +14,6 @@ import {
 
 const pctOf = (n, total) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
-/** ข้อความในกล่อง tooltip: หัวข้อ + แถว [ชื่อ, ค่า] */
 function tipHtml(title, rows) {
   return `<strong>${escapeHtml(title)}</strong>${rows
     .map(([label, value, dot]) => `<span class="chart-tip-row">${dot ? `<i class="legend-dot ${dot}"></i>` : ''}${escapeHtml(label)}<b>${escapeHtml(value)}</b></span>`)
@@ -121,10 +120,7 @@ function renderStats(stats) {
   renderRecent(stats.recent_requests || []);
 }
 
-/**
- * ใส่ tooltip ให้แถบสัดส่วน และให้แถวคำอธิบาย (legend) ชี้แล้วเน้นแถบเดียวกัน
- * parts: [id ของแถบ, ชื่อ, จำนวน, สีจุด]
- */
+// parts: [id ของแถบ, ชื่อ, จำนวน, สีจุด]
 function setSegmentTips(total, noun, parts) {
   parts.forEach(([segId, label, count, dot]) => {
     const tip = tipHtml(label, [[`${count} ${noun}${count === 1 ? '' : 's'}`, `${pctOf(count, total)}%`, dot]]);
@@ -144,14 +140,11 @@ const REQUEST_STATUS = {
   pending: { label: 'Pending', dot: 'dot-yellow', cls: 'status-pending' },
   rejected: { label: 'Cancelled', dot: 'dot-taupe', cls: 'status-available' },
 };
-// item_id -> { item } | { notFound: true } (เก็บเฉพาะผลที่แน่นอน ข้อผิดพลาดอื่นไม่เก็บ เพื่อให้ลองใหม่ได้)
+// เก็บเฉพาะผลที่แน่นอน (พบ / 404) ข้อผิดพลาดอื่นไม่เก็บ เพื่อให้กดเปิดใหม่แล้วลองโหลดอีกครั้งได้
 const itemCache = new Map();
 let recentRequests = [];
 
-/**
- * ดึงโพสต์ตาม ID ผ่าน GET /api/admin/items/:id (รวมโพสต์ที่ถูกลบ)
- * คืน { item } | { notFound: true } เมื่อ API ตอบ 404 | { error: ข้อความจริง } เมื่อผิดพลาดอย่างอื่น
- */
+// คืน { item } | { notFound: true } | { error: message }
 async function fetchItem(id) {
   if (itemCache.has(id)) return itemCache.get(id);
   try {
@@ -204,7 +197,6 @@ function renderRecent(recent) {
       .join('');
   };
   draw();
-  // โหลดชื่อโพสต์มาแทน "Item #N"
   Promise.all([...new Set(recent.map((r) => r.item_id))].map(fetchItem)).then(draw);
 }
 
@@ -259,7 +251,6 @@ async function openRecent(requestId) {
     </div>
     ${item.description ? `<div class="meta-label">Description</div><p class="recent-modal-text">${escapeHtml(item.description)}</p>` : ''}
     ${wants ? `<div class="meta-label">Looking to swap for</div><p class="recent-modal-text">${escapeHtml(wants)}</p>` : ''}`;
-  // รูปเสีย/ไฟล์หาย → ซ่อนกรอบรูปแทนไอคอนรูปแตก
   body.querySelector('.modal-detail-img')?.addEventListener('error', (e) => e.target.remove(), { once: true });
   link.href = `admin-items.html?q=${encodeURIComponent(item.title)}`;
   link.hidden = false;
@@ -274,7 +265,7 @@ recentModal.addEventListener('click', (e) => {
   if (e.target === recentModal || e.target.closest('[data-close-recent]')) closeModalDialog(recentModal);
 });
 
-// ---------- ลบโพสต์จากป๊อปอัป ----------
+// ---------- Delete from popup ----------
 let selectedItem = null;
 const recentDeleteBtn = document.getElementById('recent-delete-btn');
 const deleteModal = document.getElementById('delete-modal');
@@ -310,7 +301,7 @@ deleteConfirmBtn.addEventListener('click', async () => {
   }
 });
 
-// ---------- Tooltip ของกราฟ (ชี้เมาส์ หรือกด Tab มาที่แท่ง/แถว) ----------
+// ---------- Chart tooltip ----------
 const chartTip = document.createElement('div');
 chartTip.className = 'chart-tip';
 chartTip.setAttribute('role', 'tooltip');
@@ -345,7 +336,6 @@ function hideTip() {
   highlight(null);
 }
 
-/** ชี้แถว legend หรือแถบ → แถบอื่นในกล่องเดียวกันจางลง */
 function highlight(el) {
   document.querySelectorAll('.stacked-bar.is-focused').forEach((bar) => bar.classList.remove('is-focused'));
   document.querySelectorAll('.stacked-seg.is-active').forEach((seg) => seg.classList.remove('is-active'));

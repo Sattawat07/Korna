@@ -200,20 +200,16 @@
   border-color: var(--text-muted);
 }
 
-/* ==========================================================================
-   Dropdown (select) — ใช้ร่วมทุกหน้า
-   เบราว์เซอร์ที่รองรับ appearance: base-select (Chrome/Edge รุ่นใหม่) จะได้
-   รายการตัวเลือกแบบมุมมน มีเงา และ hover; เบราว์เซอร์อื่นใช้แบบเดิมของระบบ
-   ========================================================================== */
+/* Dropdown ทุกหน้า: Chrome/Edge ที่รองรับ base-select ได้เมนูแบบใหม่ เบราว์เซอร์อื่นใช้แบบเดิม */
 @supports (appearance: base-select) {
-  /* :not([multiple]) เพิ่มน้ำหนักให้ชนะ .pill select / .soft-input select ที่ตั้ง appearance: none */
+  /* :not([multiple]) ให้ชนะ appearance: none ของ .pill select / .soft-input select */
   select:not([multiple]),
   ::picker(select) {
     appearance: base-select;
   }
 
   select:not([multiple]) {
-    align-items: center; /* ข้อความที่เลือกอยู่กึ่งกลางแนวตั้งเหมือนเดิม */
+    align-items: center;
     cursor: pointer;
   }
 
@@ -234,7 +230,7 @@
 
   ::picker(select) {
     min-width: anchor-size(width);
-    max-height: none; /* แสดงตัวเลือกครบ ไม่มีแถบเลื่อน (ถ้าจอเตี้ยกว่ารายการ เบราว์เซอร์จะเลื่อนให้เอง) */
+    max-height: none;
     margin-block: 6px;
     padding: 6px;
     border: 1px solid var(--border-soft);
@@ -298,7 +294,6 @@
     margin-left: auto;
   }
 
-  /* ตัวเลือกแรกที่เป็นค่าว่าง (เช่น "Category", "All categories") ใช้สีอ่อน */
   select option[value='']:not(:checked) {
     color: var(--text-muted);
   }

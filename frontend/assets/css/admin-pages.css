@@ -650,7 +650,6 @@
   display: none;
 }
 
-/* เมนู dropdown กว้างตามชื่อที่ยาวที่สุด ไม่ตัดขึ้นบรรทัดใหม่ */
 .custom-select-menu {
   left: auto;
   width: max-content;
@@ -660,7 +659,6 @@
   white-space: nowrap;
 }
 
-/* รายชื่อสมาชิก: ไฮไลต์ตอนชี้เมาส์ (ก่อนหน้านี้เปลี่ยนสีเฉพาะตอนเลือก) */
 .user-row-btn {
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
