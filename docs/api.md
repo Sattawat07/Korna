@@ -520,6 +520,10 @@ API ตั้ง `status=available` เองและตอบ `201 {"item": { 
 
 เปลี่ยน `item_status` เป็น `removed` โดยไม่ลบแถว รูป หรือข้อมูลคำขอ พร้อมเปลี่ยนคำขอของโพสต์ที่ยัง `pending` เป็น `rejected` และสร้างการแจ้งเตือน `request_decided` ให้ผู้ส่งคำขอแต่ละคนใน transaction เดียวกัน คำขอที่ตัดสินแล้วคงสถานะเดิม ตอบ `200 {"item":{ ... }}` โพสต์ที่ไม่มีตอบ `404 NOT_FOUND`; โพสต์ที่ `removed` แล้วตอบ `409 INVALID_STATE` ข้อความยืนยันใน UI ควรสื่อว่าโพสต์จะถูกซ่อนจากชุมชนและคำขอที่ค้างอยู่จะถูกปฏิเสธ ไม่ใช่ลบข้อมูลถาวร
 
+### DELETE /api/admin/items/:id/permanent
+
+เฉพาะ `admin` และ `super_admin` ลบโพสต์ที่มีสถานะ `removed` ออกจากฐานข้อมูลถาวร รวมคำขอ ข้อเสนอแลก รูป และการแจ้งเตือนที่เกี่ยวข้อง แล้วลบไฟล์รูปจาก `uploads/` ตอบ `200 {"deleted":true,"id":12}` หากไม่มีโพสต์ตอบ `404 NOT_FOUND` หากยังไม่เป็น `removed` ตอบ `409 INVALID_STATE` ต้องซ่อนโพสต์ด้วย `DELETE /api/admin/items/:id` ก่อน
+
 ### PATCH /api/admin/users/:id/role
 
 เฉพาะ `super_admin` ส่ง JSON `{"role":"admin"}` เพื่อมอบสิทธิ์ หรือ `{"role":"user"}` เพื่อถอดสิทธิ์ ตอบ `200 {"user":{ ... }}` โดยใช้รูปแบบ `user` เดียวกับ `GET /api/admin/users` และไม่ส่ง password hash หรือ salt กลับ การส่ง role เดิมซ้ำตอบ `200`; ผู้ใช้ที่ไม่มีตอบ `404 NOT_FOUND` ห้ามเปลี่ยน role ของตัวเอง และห้ามลดสิทธิ์ `super_admin` คนสุดท้าย (ตอบ `409 INVALID_STATE`) การส่ง `{"role":"super_admin"}` หรือ role อื่นตอบ `400 VALIDATION_ERROR`

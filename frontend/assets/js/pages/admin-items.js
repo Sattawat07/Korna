@@ -26,8 +26,8 @@ const nextBtn = document.getElementById('next-page-btn');
 const resetBtn = document.getElementById('reset-filters-btn');
 
 const deleteModalApi = setupAdminDeleteModal({
-  onDeleted: async () => {
-    const leavesList = currentStatus !== '' && currentStatus !== 'removed';
+  onDeleted: async (item) => {
+    const leavesList = item.status === 'removed' || (currentStatus !== '' && currentStatus !== 'removed');
     if (leavesList && currentPage > 1 && currentItems.length <= 1) {
       currentPage -= 1;
     }
@@ -127,7 +127,7 @@ function renderItemsTable(items) {
           <td>${escapeHtml(formatShortDate(item.created_at))}</td>
           <td>
             <div class="action-group">
-              <button type="button" class="btn-outline" data-action="delete" data-id="${escapeHtml(item.id)}" ${isRemoved ? 'disabled' : ''}>Delete</button>
+              <button type="button" class="btn-outline" data-action="delete" data-id="${escapeHtml(item.id)}">${isRemoved ? 'Delete permanently' : 'Hide item'}</button>
             </div>
           </td>
         </tr>

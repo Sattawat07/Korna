@@ -1,5 +1,8 @@
 import { Router } from 'express';
+import { join } from 'node:path';
 import { pool } from '../db.js';
+import { config } from '../config.js';
+import { discardImages } from '../uploads.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const adminRouter = Router();
@@ -402,6 +405,69 @@ adminRouter.delete('/items/:id', async (req, res) => {
 			catch (rollbackError) { console.error('Failed to roll back admin item removal:', rollbackError); }
 		}
 		console.error('Failed to remove admin item:', error);
+		return res.status(503).json({
+			error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' },
+		});
+	} finally {
+		client?.release();
+	}
+});
+
+adminRouter.delete('/items/:id/permanent', async (req, res) => {
+	const itemId = Number(req.params.id);
+	if (!/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(itemId)) {
+		return res.status(400).json({
+			error: { code: 'VALIDATION_ERROR', message: 'Please check the submitted fields.',
+				details: { id: 'Enter a valid item ID' } },
+		});
+	}
+
+	let client;
+	try {
+		client = await pool.connect();
+		await client.query('BEGIN');
+		const { rows } = await client.query(
+			'SELECT item_status FROM items WHERE item_id = $1 FOR UPDATE', [itemId]);
+		if (rows.length === 0) {
+			await client.query('ROLLBACK');
+			return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Item not found.' } });
+		}
+		if (rows[0].item_status !== 'removed') {
+			await client.query('ROLLBACK');
+			return res.status(409).json({
+				error: { code: 'INVALID_STATE', message: 'Remove the item before deleting it permanently.' },
+			});
+		}
+
+		const { rows: imageRows } = await client.query(`
+			SELECT image_url FROM item_images WHERE image_item_id = $1
+			UNION ALL
+			SELECT oi.image_url FROM request_swap_offer_images oi
+			JOIN request_swap_offers o ON o.offer_id = oi.image_offer_id
+			JOIN requests r ON r.request_id = o.offer_request_id
+			WHERE r.request_item_id = $1`, [itemId]);
+		await client.query(`
+			DELETE FROM notifications
+			WHERE notification_item_id = $1
+			   OR notification_request_id IN (
+				SELECT request_id FROM requests WHERE request_item_id = $1
+			)`, [itemId]);
+		await client.query('DELETE FROM requests WHERE request_item_id = $1', [itemId]);
+		await client.query('DELETE FROM items WHERE item_id = $1', [itemId]);
+		await client.query('COMMIT');
+
+		const paths = imageRows.flatMap(({ image_url: url }) => {
+			const match = /^\/uploads\/(items|offers)\/([a-f0-9-]{36}\.(?:jpg|png|webp))$/.exec(url);
+			return match ? [join(config.uploadDir, match[1], match[2])] : [];
+		});
+		await discardImages(paths);
+		return res.status(200).json({ deleted: true, id: itemId });
+	} catch (error) {
+		if (client) {
+			try { await client.query('ROLLBACK'); }
+			catch (rollbackError) { console.error('Failed to roll back permanent item deletion:', rollbackError); }
+		}
+		console.error('Failed to delete admin item permanently:', error);
 		return res.status(503).json({
 			error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is temporarily unavailable.' },
 		});

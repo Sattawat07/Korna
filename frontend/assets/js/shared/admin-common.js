@@ -112,6 +112,9 @@ export function setupAdminDeleteModal({ onDeleted } = {}) {
   const confirmBtn = document.getElementById('delete-confirm-btn');
   const errorEl = document.getElementById('delete-error');
   const nameEl = document.getElementById('delete-item-name');
+  const titleEl = document.getElementById('delete-modal-title');
+  const descriptionEl = document.getElementById('delete-description');
+  const consequenceEl = document.getElementById('delete-consequence');
   let targetItem = null;
 
   closeBtn?.addEventListener('click', () => closeModalDialog(modal));
@@ -125,11 +128,14 @@ export function setupAdminDeleteModal({ onDeleted } = {}) {
     confirmBtn.disabled = true;
     errorEl.textContent = '';
     try {
-      await request(`/admin/items/${targetItem.id}`, { method: 'DELETE' });
+      const endpoint = targetItem.status === 'removed'
+        ? `/admin/items/${targetItem.id}/permanent`
+        : `/admin/items/${targetItem.id}`;
+      await request(endpoint, { method: 'DELETE' });
       closeModalDialog(modal);
       await onDeleted?.(targetItem);
     } catch (error) {
-      errorEl.textContent = error.message || 'Unable to delete item.';
+      errorEl.textContent = error.message || 'Unable to update item.';
     } finally {
       confirmBtn.disabled = false;
     }
@@ -141,6 +147,15 @@ export function setupAdminDeleteModal({ onDeleted } = {}) {
       targetItem = item;
       errorEl.textContent = '';
       nameEl.textContent = item.title;
+      const permanent = item.status === 'removed';
+      titleEl.textContent = permanent ? 'Delete permanently?' : 'Hide this item?';
+      descriptionEl.textContent = permanent
+        ? 'This will permanently delete the listing and its requests.'
+        : 'This will hide the listing from the community.';
+      consequenceEl.textContent = permanent
+        ? 'Images, requests, and related notifications will also be deleted. This cannot be undone.'
+        : 'Pending requests will be rejected. The item will remain in admin records.';
+      confirmBtn.textContent = permanent ? 'Delete permanently' : 'Hide item';
       openModalDialog(modal);
     },
   };
@@ -191,7 +206,8 @@ export function setupAdminItemDetailModal({ onDelete } = {}) {
         imgEl.classList.add('is-hidden');
       }
 
-      deleteBtn.disabled = item.status === 'removed';
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = item.status === 'removed' ? 'Delete permanently' : 'Hide item';
       openModalDialog(modal);
     },
   };

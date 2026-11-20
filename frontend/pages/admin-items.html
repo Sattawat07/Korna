@@ -186,7 +186,7 @@
         <p class="subtitle" id="detail-desc">—</p>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn-yellow" id="detail-delete-btn">Delete item</button>
+        <button type="button" class="btn-yellow" id="detail-delete-btn">Hide item</button>
       </div>
     </div>
   </div>
@@ -195,14 +195,14 @@
   <div class="admin-modal-backdrop" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
     <div class="admin-modal-card">
       <button type="button" class="admin-modal-close" id="delete-close-btn" aria-label="Close">✕</button>
-      <h3 id="delete-modal-title">Delete this item?</h3>
-      <p class="subtitle">This will hide the listing from the community.</p>
+      <h3 id="delete-modal-title">Hide this item?</h3>
+      <p class="subtitle" id="delete-description">This will hide the listing from the community.</p>
       <strong id="delete-item-name">Item</strong>
-      <p class="subtitle">This action cannot be undone from the feed.</p>
+      <p class="subtitle" id="delete-consequence">Pending requests will be rejected. The item will remain in admin records.</p>
       <div class="modal-error" id="delete-error"></div>
       <div class="modal-actions">
         <button type="button" class="btn-outline" id="delete-cancel-btn">Keep item</button>
-        <button type="button" class="btn-yellow" id="delete-confirm-btn">Delete item</button>
+        <button type="button" class="btn-yellow" id="delete-confirm-btn">Hide item</button>
       </div>
     </div>
   </div>

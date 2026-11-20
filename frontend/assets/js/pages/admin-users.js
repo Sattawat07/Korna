@@ -244,7 +244,7 @@ async function loadUserItems(ownerId, page = userItemsPage) {
               </div>
             </div>
             <div class="action-group">
-              <button type="button" class="btn-outline" data-action="delete" data-id="${escapeHtml(item.id)}" ${item.status === 'removed' ? 'disabled' : ''}>Delete</button>
+              <button type="button" class="btn-outline" data-action="delete" data-id="${escapeHtml(item.id)}">${item.status === 'removed' ? 'Delete permanently' : 'Hide item'}</button>
             </div>
           </div>
         `;
