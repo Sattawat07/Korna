@@ -141,6 +141,9 @@ test('setupAdminDeleteModal handles open, cancel/Escape, delete success, and del
   const host = document.createElement('div');
   host.innerHTML = `
     <div class="admin-modal-backdrop" id="delete-modal">
+      <h3 id="delete-modal-title"></h3>
+      <p id="delete-description"></p>
+      <p id="delete-consequence"></p>
       <button id="delete-close-btn">x</button>
       <button id="delete-cancel-btn">Cancel</button>
       <button id="delete-confirm-btn">Delete</button>
@@ -197,6 +200,15 @@ test('setupAdminDeleteModal handles open, cancel/Escape, delete success, and del
   assert.equal(fetchCalls.at(-1).config.method, 'DELETE');
   assert.equal(modal.classList.contains('active'), false);
   assert.equal(deletedItem?.id, 42);
+
+  api.open({ id: 43, title: 'Old Lamp', status: 'removed' });
+  assert.equal(confirmBtn.textContent, 'Delete permanently');
+  assert.match(document.getElementById('delete-consequence').textContent, /cannot be undone/);
+  assert.equal(fetchCalls.length, 2);
+  confirmBtn.click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(fetchCalls.at(-1).url, '/api/admin/items/43/permanent');
+  assert.equal(deletedItem?.id, 43);
 });
 
 test('setupAdminItemDetailModal populates fields safely and delegates delete action', () => {
@@ -256,12 +268,13 @@ test('setupAdminItemDetailModal populates fields safely and delegates delete act
   assert.equal(modal.classList.contains('active'), false);
   assert.equal(deleteRequestedFor?.id, 99);
 
-  // Removed item disables delete button
+  // Removed item offers permanent deletion
   detailApi.open({ id: 100, title: 'Old Item', status: 'removed', type: 'free' }, 'Bob');
   assert.equal(document.getElementById('detail-owner').textContent, 'Bob');
   assert.equal(document.getElementById('detail-swap-wrap').classList.contains('is-hidden'), true);
   assert.equal(document.getElementById('detail-img').classList.contains('is-hidden'), true);
-  assert.equal(deleteBtn.disabled, true);
+  assert.equal(deleteBtn.disabled, false);
+  assert.equal(deleteBtn.textContent, 'Delete permanently');
 });
 
 test('frontend pages use shared logout modal instead of duplicated #logout-modal markup', async () => {

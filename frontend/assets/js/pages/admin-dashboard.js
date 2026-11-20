@@ -255,7 +255,8 @@ async function openRecent(requestId) {
   body.querySelector('.modal-detail-img')?.addEventListener('error', (e) => e.target.remove(), { once: true });
   link.href = `admin-items.html?q=${encodeURIComponent(item.title)}`;
   link.hidden = false;
-  recentDeleteBtn.hidden = item.status === 'removed';
+  recentDeleteBtn.hidden = false;
+  recentDeleteBtn.textContent = item.status === 'removed' ? 'Delete permanently' : 'Hide item';
 }
 
 document.getElementById('recent-activity-list').addEventListener('click', (e) => {
